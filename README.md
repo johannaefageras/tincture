@@ -72,16 +72,16 @@ GitHub Pages from hiding the `_app` folder.
 
 ## Change the palette
 
-Use **Import palette** in the left sidebar to replace the active palette with a
-JSON file. The palette is remembered in this browser after a refresh. New SVGs
-keep their original colors. Importing while an SVG is open keeps its current
-colors and undo history; use the **magic wand button** to apply the new palette
-to its off-palette colors.
+Use the **Palette** dropdown in the left sidebar to choose one of the ten built-in
+palettes, or **Import palette** to use a JSON file. The palette is remembered in
+this browser after a refresh. New SVGs keep their original colors. Switching or
+importing a palette while an SVG is open keeps its current colors and undo history;
+use the **magic wand button** to apply the new palette to its off-palette colors.
 
 - **Export** downloads the active palette as an editable JSON file.
 - **Template** downloads [palette-template.json](static/palette-template.json).
-- **Restore default** restores the built-in palette and clears the saved custom
-  palette. It does not recolor an open SVG.
+- **Restore default** restores Crayon Box and clears the saved palette choice.
+  It does not recolor an open SVG.
 - **Palette format guide** in the footer opens `/docs/palettes` in a separate
   tab, keeping the current artwork open. The guide includes a copyable example,
   required fields, color/file rules and fixes for common errors.
@@ -118,7 +118,8 @@ the current palette and artwork untouched and report the offending group/color.
 If browser storage is unavailable, importing still works for the current page
 and a message explains that the change may not survive a refresh.
 
-The built-in fallback is defined in `src/lib/palette.ts`.
+The ten built-in palettes are defined in `palettes.ts` and adapted to the JSON
+format in `src/lib/palette.ts`. Crayon Box is the default.
 
 ## How colors are found
 
@@ -132,7 +133,8 @@ the rest of the file is untouched.
 ## Project layout
 
 ```
-src/lib/palette.ts            default palette, JSON format and validation
+palettes.ts                   built-in palette sets
+src/lib/palette.ts            built-in palettes, JSON format and validation
 src/lib/color.ts              color parsing and nearest-color matching
 src/lib/css.ts                finds color values in style attributes and <style> blocks
 src/lib/svg-doc.ts            finds, swaps and exports the colors of a mounted SVG

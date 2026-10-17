@@ -4,6 +4,7 @@
 	import { slide } from 'svelte/transition';
 	import { asset } from '$app/paths';
 	import {
+		BUILT_IN_PALETTES,
 		DEFAULT_PALETTE,
 		PALETTE_STORAGE_KEY,
 		paletteColors,
@@ -31,6 +32,9 @@
 
 	const count = $derived(paletteColors(palette).length);
 	const isDefault = $derived(serializePalette(palette) === serializePalette(DEFAULT_PALETTE));
+	const selectedPreset = $derived(
+		BUILT_IN_PALETTES.find(({ palette: preset }) => serializePalette(preset) === serializePalette(palette))
+	);
 
 	function clearFeedback() {
 		clearTimeout(feedbackTimer);
@@ -71,10 +75,9 @@
 		}
 	});
 
-	function replace(next: Palette, restore = false) {
+	function replace(next: Palette, message: string, restore = false) {
 		onpreview(null);
 		palette = next;
-		let message = restore ? 'Default palette restored.' : `Imported “${next.name}”.`;
 		let storageProblem = false;
 		try {
 			if (restore) localStorage.removeItem(PALETTE_STORAGE_KEY);
@@ -87,6 +90,12 @@
 		showFeedback(message, storageProblem);
 	}
 
+	function choosePreset(event: Event) {
+		const id = (event.currentTarget as HTMLSelectElement).value;
+		const preset = BUILT_IN_PALETTES.find((preset) => preset.id === id);
+		if (preset) replace(preset.palette, `Selected “${preset.palette.name}”.`, preset.palette === DEFAULT_PALETTE);
+	}
+
 	async function importFile() {
 		const file = input?.files?.[0];
 		if (input) input.value = '';
@@ -95,7 +104,7 @@
 		clearFeedback();
 		try {
 			const next = parsePalette(await file.text());
-			replace(next);
+			replace(next, `Imported “${next.name}”.`);
 		} catch (cause) {
 			showFeedback(cause instanceof Error ? cause.message : 'That palette file could not be read.', true);
 		} finally {
@@ -117,8 +126,15 @@
 
 <section class="panel" aria-labelledby="palette-title">
 	<header>
-		<p class="eyebrow">Palette</p>
-		<h2 id="palette-title">{palette.name}</h2>
+		<label id="palette-title" class="eyebrow" for="palette-choice">Palette</label>
+		<div class="palette-choice">
+			<select id="palette-choice" value={selectedPreset?.id ?? ''} disabled={importing} onchange={choosePreset}>
+				{#if !selectedPreset}<option value="" disabled>{palette.name} (imported)</option>{/if}
+				{#each BUILT_IN_PALETTES as preset (preset.id)}
+					<option value={preset.id}>{preset.palette.name}</option>
+				{/each}
+			</select>
+		</div>
 		<p class="summary">{count} {count === 1 ? 'color' : 'colors'} · {palette.groups.length} {palette.groups.length === 1 ? 'group' : 'groups'}</p>
 		<div class="actions">
 			<button type="button" class="button primary import" disabled={importing} onclick={() => input?.click()}>
@@ -127,7 +143,7 @@
 			<button type="button" class="button" aria-label="Export palette" onclick={exportFile}>Export</button>
 			<a class="button" href={asset('palette-template.json')} download aria-label="Download palette template">Template</a>
 		</div>
-		<button type="button" class="restore" disabled={(isDefault && !hasSaved) || importing} onclick={() => replace(DEFAULT_PALETTE, true)}>
+		<button type="button" class="restore" disabled={(isDefault && !hasSaved) || importing} onclick={() => replace(DEFAULT_PALETTE, 'Default palette restored.', true)}>
 			Restore default
 		</button>
 		{#if feedback}
@@ -158,15 +174,45 @@
 		font-size: var(--text-s);
 	}
 
-	h2 {
-		margin-top: 2px;
-		font-size: var(--text-m);
+	.palette-choice {
+		position: relative;
+		margin-top: var(--space-1);
+	}
+
+	.palette-choice::after {
+		position: absolute;
+		top: 50%;
+		inset-inline-end: var(--space-3);
+		width: 0.375rem;
+		height: 0.375rem;
+		border-right: 1.5px solid currentColor;
+		border-bottom: 1.5px solid currentColor;
+		transform: translateY(-75%) rotate(45deg);
+		content: '';
+		pointer-events: none;
+	}
+
+	select {
+		appearance: none;
+		display: block;
+		width: 100%;
+		min-width: 0;
+		min-height: 2rem;
+		padding: 0.375rem var(--space-2);
+		padding-inline-end: 2rem;
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		background: var(--paper);
 		font-weight: var(--weight-semibold);
-		overflow-wrap: anywhere;
+		cursor: pointer;
+	}
+
+	select:hover:not(:disabled) {
+		border-color: var(--ink);
 	}
 
 	.summary {
-		margin-top: 2px;
+		margin-top: 6px;
 	}
 
 	.actions {
@@ -221,6 +267,7 @@
 	}
 
 	@media (max-width: 56rem), (pointer: coarse) {
+		select,
 		.restore {
 			min-height: 2.75rem;
 		}

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { nearest } from './color.ts';
-import { DEFAULT_PALETTE, paletteColors, paletteRows, parsePalette, serializePalette } from './palette.ts';
+import { BUILT_IN_PALETTES, paletteColors, paletteRows, parsePalette, serializePalette } from './palette.ts';
 
 const valid = () => ({
 	version: 1,
@@ -28,8 +28,11 @@ describe('palette files', () => {
 		expect(parsePalette(JSON.stringify(source)).groups[0].colors).toHaveLength(5);
 	});
 
-	it('round-trips both the built-in palette and the downloadable template', () => {
-		expect(parsePalette(serializePalette(DEFAULT_PALETTE))).toEqual(DEFAULT_PALETTE);
+	it.each(BUILT_IN_PALETTES)('round-trips the built-in palette $palette.name through export and import', ({ palette }) => {
+		expect(parsePalette(serializePalette(palette))).toEqual(palette);
+	});
+
+	it('round-trips the downloadable template', () => {
 		const template = readFileSync(new URL('../../static/palette-template.json', import.meta.url), 'utf8');
 		const palette = parsePalette(template);
 		expect(palette.name).toBe('Soft colors');

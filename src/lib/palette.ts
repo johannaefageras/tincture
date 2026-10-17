@@ -1,5 +1,7 @@
 /** Palette file format, validation and the built-in fallback. No browser state. */
 
+import { paletteSets } from '../../palettes.ts';
+
 export interface PaletteGroup {
 	name: string;
 	colors: string[];
@@ -14,23 +16,13 @@ export interface Palette {
 // Keep the original key so saved palettes survive the rename to Tincture.
 export const PALETTE_STORAGE_KEY = 'recolor:palette';
 
-export const DEFAULT_PALETTE: Palette = {
-	version: 1,
-	name: 'Default palette',
-	groups: [
-		{ name: 'Black and white', colors: ['#000000', '#FFFFFF'] },
-		{ name: 'Red', colors: ['#8A2020', '#BC3A3A', '#E07A76'] },
-		{ name: 'Orange', colors: ['#C96A12', '#F59A2E', '#FFCB80'] },
-		{ name: 'Yellow', colors: ['#D19A0C', '#FFC612', '#FFE48A'] },
-		{ name: 'Green', colors: ['#579A27', '#7CCB45', '#B4E48C'] },
-		{ name: 'Blue', colors: ['#0B5FA5', '#0A84C9', '#58B8E8'] },
-		{ name: 'Purple', colors: ['#6235A8', '#8660C9', '#B7A1E6'] },
-		{ name: 'Pink', colors: ['#B02E6C', '#E0569A', '#F4A3C8'] },
-		{ name: 'Brown', colors: ['#A0622A', '#C48444', '#DDAA78'] },
-		{ name: 'Light gray', colors: ['#8A8A8A', '#BDBDBD', '#E6E6E6'] },
-		{ name: 'Dark gray', colors: ['#2B2B2B', '#4A4A4A', '#6E6E6E'] }
-	]
-};
+export const BUILT_IN_PALETTES = paletteSets.map(({ id, name, description, families }) => ({
+	id,
+	description,
+	palette: { version: 1, name, groups: families } satisfies Palette
+}));
+
+export const DEFAULT_PALETTE: Palette = BUILT_IN_PALETTES[0].palette;
 
 export interface Swatch {
 	hex: string;
