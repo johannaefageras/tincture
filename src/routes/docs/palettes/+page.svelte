@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { asset, resolve } from '$app/paths';
-	import template from '../../../../static/palette-template.json?raw';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
+	const template = $derived(data.template);
 
 	let copyNotice = $state('');
 
@@ -57,6 +60,7 @@
 	<section aria-labelledby="example">
 		<h2 id="example">A complete JSON example</h2>
 		<p>This is the same file as the downloadable template. Keep the structure and replace the names and colors with your own.</p>
+		<p>Each group in the template has five shades, ordered from lightest (1) to darkest (5), with the main color in the middle (3).</p>
 		<div class="example">
 			<div class="example-bar">
 				<span>palette-template.json</span>
@@ -90,7 +94,7 @@
 			<li><strong>Keep every color unique across the whole palette.</strong> A color cannot appear twice, even in different groups. <code>"#e0569a"</code> and <code>"#E0569A"</code> count as the same color.</li>
 			<li><strong>Lowercase and surrounding spaces are accepted.</strong> Tincture converts hex colors to uppercase and trims surrounding whitespace from names and colors. Names containing only spaces are empty.</li>
 			<li><strong>Keep at least one group and one color in each group.</strong> Groups can contain different numbers of colors. A single-color palette is valid.</li>
-			<li><strong>Put colors in the order you want to see them.</strong> Tincture preserves both group order and color order. Longer groups wrap within the palette sidebar.</li>
+			<li><strong>Put colors in the order you want to see them.</strong> Tincture preserves both group order and color order. Up to five colors fit on each row; longer groups wrap within the palette sidebar. The template and built-in families run from lightest to darkest, with the main shade in the middle.</li>
 			<li><strong>Leave transparency out of the palette.</strong> Tincture preserves the SVG’s existing opacity. The editor supplies its own <strong>None</strong> swatch, so do not include <code>"none"</code>, <code>"transparent"</code> or alpha values.</li>
 			<li><strong>Use valid JSON.</strong> Put field names and text values in double quotes. Separate items with commas, but leave out comments and trailing commas.</li>
 		</ul>
@@ -116,8 +120,8 @@
 		<h2 id="after-import">What happens after importing?</h2>
 		<ul>
 			<li>The imported palette replaces all the editor’s palette swatches and is remembered in this browser after a refresh.</li>
-			<li>Newly opened SVGs keep their original colors. Use the <strong>magic wand button</strong> beside Reset all to match off-palette colors to their nearest palette swatches.</li>
-			<li>An SVG already open keeps its current colors and undo history. Use the magic wand button whenever you want to apply the new palette.</li>
+			<li>Newly opened SVGs keep their original colors. Use <strong>Match colors</strong> below the color summary to match off-palette colors to their nearest palette swatches.</li>
+			<li>An SVG already open keeps its current colors and undo history. Choose <strong>Match to [palette name]</strong> below the palette chooser when you want to apply it, or use <strong>Match colors</strong> in the color panel.</li>
 			<li><strong>Restore default</strong> brings back the built-in palette and clears the saved import. It also keeps an open SVG’s colors as they are.</li>
 		</ul>
 		<p class="note">If browser storage is unavailable, you can still import a palette for the current page. Tincture will tell you that it may not be remembered after a refresh.</p>

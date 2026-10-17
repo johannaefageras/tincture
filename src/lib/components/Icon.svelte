@@ -8,6 +8,8 @@
 	import xmarkSvg from '#lib/assets/icons/xmark.svg?raw';
 	import fileTextSvg from '#lib/assets/icons/file-text.svg?raw';
 	import objectUngroupSvg from '#lib/assets/icons/object-ungroup.svg?raw';
+	import caretDownSvg from '#lib/assets/icons/caret-down.svg?raw';
+	import caretUpSvg from '#lib/assets/icons/caret-up.svg?raw';
 
 	const ASSETS = {
 		undo: undoSvg,
@@ -18,7 +20,9 @@
 		import: importSvg,
 		reset: xmarkSvg,
 		document: fileTextSvg,
-		separate: objectUngroupSvg
+		separate: objectUngroupSvg,
+		'caret-down': caretDownSvg,
+		'caret-up': caretUpSvg
 	} as const;
 
 	const PATHS = {

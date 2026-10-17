@@ -23,6 +23,8 @@
 	interface Props {
 		rows: Row[];
 		selected: string[];
+		compact?: boolean;
+		visible?: boolean;
 		onselect: (key: string, event: MouseEvent) => void;
 		onhover: (key: string | null) => void;
 		onreset: (key: string) => void;
@@ -31,7 +33,7 @@
 		onresetall: () => void;
 	}
 
-	let { rows, selected, onselect, onhover, onreset, onseparate, onmatchall, onresetall }: Props = $props();
+	let { rows, selected, compact = false, visible = true, onselect, onhover, onreset, onseparate, onmatchall, onresetall }: Props = $props();
 
 	const offCount = $derived(rows.filter((row) => !row.resolved).length);
 	const changedCount = $derived(rows.filter((row) => row.changed).length);
@@ -39,13 +41,7 @@
 
 	const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
-	function summary(): string {
-		if (!rows.length) return 'No colors found in this SVG.';
-		const colorCount = new Set(rows.map((row) => row.parentKey ?? row.key)).size;
-		const counts = `${plural(colorCount, 'color')}${areaCount ? ` · ${plural(areaCount, 'separate area')}` : ''}`;
-		if (offCount === 0) return `${counts}, all on palette`;
-		return `${counts}, ${offCount} off palette`;
-	}
+	const colorCount = $derived(new Set(rows.map((row) => row.parentKey ?? row.key)).size);
 
 	function usage(row: Row): string {
 		const parts: string[] = [];
@@ -59,38 +55,80 @@
 	const name = (value: string) => (value === NONE ? 'None' : value);
 
 	let list: HTMLElement | undefined = $state();
+	let container: HTMLElement | undefined = $state();
 
 	// A color picked on the canvas may be scrolled out of view here.
 	$effect(() => {
+		if (!visible) return;
 		const last = selected.at(-1);
 		if (!last || !list) return;
+		const scroller = compact ? container : list;
 		const row = list.querySelector<HTMLElement>(`[data-key="${last}"]`);
-		if (!row || list.scrollHeight <= list.clientHeight) return;
+		if (!row || !scroller?.clientHeight || scroller.scrollHeight <= scroller.clientHeight) return;
 		// Reveal the selection inside the list without moving the whole mobile page.
-		const bounds = list.getBoundingClientRect();
+		const bounds = scroller.getBoundingClientRect();
 		const selectedBounds = row.getBoundingClientRect();
-		if (selectedBounds.top < bounds.top) list.scrollTop -= bounds.top - selectedBounds.top;
-		else if (selectedBounds.bottom > bounds.bottom) list.scrollTop += selectedBounds.bottom - bounds.bottom;
+		if (selectedBounds.top < bounds.top) scroller.scrollTop -= bounds.top - selectedBounds.top;
+		else if (selectedBounds.bottom > bounds.bottom) scroller.scrollTop += selectedBounds.bottom - bounds.bottom;
 	});
 </script>
 
-<section class="found" aria-labelledby="found-title">
+<section class="found" class:compact bind:this={container} aria-labelledby="found-title">
 	<header>
 		<h2 id="found-title">Colors in this SVG</h2>
-		<p class="summary" aria-live="polite">{summary()}</p>
+		<p id="found-summary" class="summary" aria-live="polite">
+			{#if rows.length}
+				<span>{plural(colorCount, 'color')}{areaCount ? ` · ${plural(areaCount, 'separate area')}` : ''}</span>
+				<span class="summary-state">
+					{#if offCount}
+						<span class="status-dot" aria-hidden="true"></span>{offCount} off palette
+					{:else}
+						<Icon name="check" />All on palette
+					{/if}
+				</span>
+			{:else}
+				No colors found in this SVG.
+			{/if}
+		</p>
+		<div class="actions">
+			<button
+				type="button"
+				class="button primary match"
+				aria-describedby="found-summary"
+				title={offCount === 0 ? 'No off-palette colors to match' : 'Match off-palette colors to their nearest palette swatches'}
+				disabled={offCount === 0}
+				onclick={onmatchall}
+			>
+				<span class="wand" aria-hidden="true">{@html magicWandSvg}</span>
+				Match colors
+			</button>
+			<button type="button" class="reset" disabled={changedCount === 0} onclick={onresetall}>
+				Reset all
+			</button>
+		</div>
 		{#if rows.length}
 			<p class="hint">
-				{selected.length
-					? 'Hover the palette to preview, click a swatch to apply.'
-					: 'Select a color or area here, or click it in the artwork.'}
+				{compact
+					? 'Select a color to open its replacement palette.'
+					: selected.length
+					? 'Choose a palette swatch to apply its color.'
+					: offCount > 0
+						? 'Match all colors at once, or select a color to change it yourself.'
+						: 'Select a color here or in the artwork to change it.'}
 			</p>
 		{/if}
 		{#if areaCount}
 			<p class="area-hint">Areas follow the SVG’s shapes. Parts of a single path stay together.</p>
 		{/if}
+		{#if rows.length}
+			<p id="color-chip-key" class="chip-key">
+				<span class="chip chip-sample" aria-hidden="true"><span></span><span></span></span>
+				<span>Original (left) → current (right)</span>
+			</p>
+		{/if}
 	</header>
 
-	<ul bind:this={list}>
+	<ul bind:this={list} aria-describedby={rows.length ? 'color-chip-key' : undefined}>
 		{#each rows as row (row.key)}
 			{@const isSelected = selected.includes(row.key)}
 			<li class:selected={isSelected} class:area={row.parentKey !== undefined}>
@@ -101,7 +139,7 @@
 						data-key={row.key}
 						aria-pressed={isSelected}
 						onclick={(event) => onselect(row.key, event)}
-						onpointerenter={() => onhover(row.key)}
+						onpointerenter={(event) => { if (event.pointerType !== 'touch') onhover(row.key); }}
 						onpointerleave={() => onhover(null)}
 					>
 						<span class="chip" aria-hidden="true">
@@ -110,13 +148,13 @@
 							></span>
 						</span>
 						<span class="text">
-							<span class="hex">{#if row.areaIndex}<span class="area-name">Area {row.areaIndex}</span>{' · '}{/if}{name(row.current)}</span>
-							<span class="meta">{row.changed ? `was ${row.hex}, ` : ''}{usage(row)}</span>
+							<span class="hex">{#if row.areaIndex}<span class="area-name">Area {row.areaIndex}</span>{' · '}{/if}<span class:hex-value={row.current !== NONE}>{name(row.current)}</span></span>
+							<span class="meta">{#if row.changed}was <span class="hex-value">{row.hex}</span>{/if}{row.changed ? `, ${usage(row)}` : usage(row)}</span>
 						</span>
 						{#if row.resolved}
-							<span class="state on"><Icon name="check" /><span class="visually-hidden">on palette</span></span>
+							<span class="state on" title="On palette"><Icon name="check" /><span class="visually-hidden">on palette</span></span>
 						{:else}
-							<span class="state off">off palette</span>
+							<span class="state off" title="Off palette"><span class="status-dot" aria-hidden="true"></span><span class="visually-hidden">off palette</span></span>
 						{/if}
 					</button>
 					{#if row.changed}
@@ -145,22 +183,6 @@
 			</li>
 		{/each}
 	</ul>
-
-	<footer>
-		<button
-			type="button"
-			class="button icon-only"
-			aria-label="Match all colors to palette"
-			title="Match all colors to their nearest palette match"
-			disabled={offCount === 0}
-			onclick={onmatchall}
-		>
-			<span class="wand" aria-hidden="true">{@html magicWandSvg}</span>
-		</button>
-		<button type="button" class="button" disabled={changedCount === 0} onclick={onresetall}>
-			Reset all
-		</button>
-	</footer>
 </section>
 
 <style>
@@ -185,9 +207,49 @@
 	}
 
 	.summary {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1) var(--space-3);
 		margin-top: 2px;
 		color: var(--ink-muted);
 		font-size: var(--text-s);
+	}
+
+	.summary-state {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+
+	.status-dot {
+		flex: none;
+		width: 0.5rem;
+		height: 0.5rem;
+		border: 1.5px solid currentColor;
+		border-radius: 50%;
+	}
+
+	.chip-key {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
+		color: var(--ink-muted);
+		font-size: var(--text-s);
+	}
+
+	.chip.chip-sample {
+		width: 1.375rem;
+		height: 0.875rem;
+	}
+
+	.chip-sample > :first-child {
+		background: var(--rule);
+	}
+
+	.chip-sample > :last-child {
+		background: var(--ink-muted);
 	}
 
 	.hint {
@@ -310,6 +372,11 @@
 		letter-spacing: 0.02em;
 	}
 
+	.hex-value {
+		font-family: var(--font-mono);
+		font-variant-numeric: tabular-nums;
+	}
+
 	.meta {
 		overflow: hidden;
 		color: var(--ink-muted);
@@ -321,6 +388,8 @@
 	.state {
 		flex: none;
 		display: inline-flex;
+		justify-content: center;
+		width: 1rem;
 		font-size: var(--text-s);
 	}
 
@@ -329,7 +398,7 @@
 	}
 
 	.state.off {
-		font-weight: var(--weight-medium);
+		color: var(--ink-muted);
 	}
 
 	.undo {
@@ -352,12 +421,40 @@
 		outline-offset: -3px;
 	}
 
-	footer {
-		flex: none;
+	.actions {
 		display: flex;
-		gap: var(--space-2);
-		padding: var(--space-3) var(--space-4);
-		border-top: 1px solid var(--rule);
+		align-items: center;
+		gap: var(--space-3);
+		margin-top: var(--space-3);
+	}
+
+	.match {
+		flex: 1;
+		justify-content: center;
+	}
+
+	.reset {
+		flex: none;
+		min-height: 2rem;
+		padding: 0.375rem var(--space-1);
+		border: 0;
+		border-radius: var(--radius);
+		background: none;
+		color: var(--ink-muted);
+		font-size: var(--text-s);
+		text-decoration: underline;
+		text-decoration-color: var(--rule);
+		text-underline-offset: 3px;
+	}
+
+	.reset:hover:not(:disabled) {
+		color: var(--ink);
+		text-decoration-color: currentColor;
+	}
+
+	.reset:disabled {
+		opacity: 0.55;
+		text-decoration: none;
 	}
 
 	.wand {
@@ -369,6 +466,30 @@
 	.wand :global(svg) {
 		width: 100%;
 		height: 100%;
+	}
+
+	.found.compact {
+		display: block;
+		height: 100%;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+
+	.compact header {
+		padding: var(--space-3);
+	}
+
+	.compact h2 {
+		display: none;
+	}
+
+	.compact .actions {
+		margin-top: var(--space-2);
+	}
+
+	.compact ul {
+		max-height: none;
+		overflow: visible;
 	}
 
 	@media (max-width: 56rem) {
@@ -385,7 +506,8 @@
 	@media (max-width: 56rem), (pointer: coarse) {
 		.row,
 		.undo,
-		.separate {
+		.separate,
+		.reset {
 			min-height: 2.75rem;
 		}
 

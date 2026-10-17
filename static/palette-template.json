@@ -4,15 +4,15 @@
   "groups": [
     {
       "name": "Pink",
-      "colors": ["#B02E6C", "#E0569A", "#F4A3C8"]
+      "colors": ["#FED1E4", "#F4A3C8", "#E0569A", "#B02E6C", "#7E0247"]
     },
     {
       "name": "Green",
-      "colors": ["#579A27", "#7CCB45", "#B4E48C"]
+      "colors": ["#D1F6B4", "#B4E48C", "#7CCB45", "#579A27", "#366B04"]
     },
     {
       "name": "Neutrals",
-      "colors": ["#FFFFFF", "#BDBDBD", "#2B2B2B"]
+      "colors": ["#FFFFFF", "#E6E6E6", "#BDBDBD", "#6E6E6E", "#2B2B2B"]
     }
   ]
 }

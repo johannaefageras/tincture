@@ -1,0 +1,262 @@
+/* Coloris owns the popup DOM; keep its appearance in step with Tincture. */
+#custom-color-picker-host {
+	position: fixed;
+	z-index: 1000;
+	pointer-events: none;
+}
+
+#custom-color-picker-host[hidden] {
+	display: none;
+}
+
+#custom-color-picker-host .custom-color-picker-dismiss {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	pointer-events: auto;
+	cursor: default;
+}
+
+#clr-picker {
+	grid-template-columns: 2.75rem minmax(0, 1fr);
+	gap: var(--space-3);
+	width: min(17rem, calc(100vw - 1.5rem));
+	padding: var(--space-3);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	background: var(--paper);
+	box-shadow: 0 4px 12px var(--wash-strong), 0 16px 40px var(--wash);
+	font-family: var(--font);
+	pointer-events: auto;
+	max-height: calc(var(--picker-viewport-height, 100dvh) - 1rem);
+	overflow-y: auto;
+}
+
+#clr-picker[data-sheet="false"][data-positioned="true"] {
+	left: var(--picker-left) !important;
+	top: var(--picker-top) !important;
+}
+
+#clr-picker:focus {
+	outline: none;
+}
+
+#clr-picker.clr-open {
+	display: grid;
+}
+
+#custom-color-picker-title {
+	grid-column: 1 / -1;
+	order: 0;
+	color: var(--ink);
+	font-family: var(--font);
+	font-size: var(--text-m);
+	font-weight: var(--weight-semibold);
+}
+
+#clr-picker .clr-gradient {
+	grid-column: 1 / -1;
+	order: 1;
+	width: 100%;
+	height: min(10rem, 32dvh);
+	margin: 0;
+	border-radius: var(--radius);
+	box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+}
+
+#clr-picker .clr-marker {
+	width: 16px;
+	height: 16px;
+	margin: -8px 0 0 -8px;
+	border: 2px solid #fff;
+	box-shadow: 0 0 0 1px rgb(0 0 0 / 0.4);
+}
+
+#clr-picker .clr-hue {
+	grid-column: 1 / -1;
+	order: 2;
+	width: auto;
+	height: 12px;
+	margin: 1rem var(--space-1);
+	border-radius: 2px;
+}
+
+#clr-picker .clr-hue input {
+	height: 44px;
+	top: -16px;
+}
+
+#clr-picker .clr-hue div {
+	width: 20px;
+	height: 20px;
+	margin-left: -10px;
+	box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
+}
+
+#clr-picker .custom-color-picker-label {
+	grid-column: 1 / -1;
+	order: 3;
+	margin-bottom: calc(-1 * var(--space-2));
+	color: var(--ink-muted);
+	font-size: var(--text-s);
+}
+
+#clr-picker .clr-preview {
+	grid-column: 1;
+	grid-row: 5;
+	order: 4;
+	width: 2.75rem;
+	height: 2.75rem;
+	margin: 0;
+	border-radius: var(--radius);
+}
+
+#clr-picker .clr-preview::before,
+#clr-picker .clr-preview::after {
+	border-radius: inherit;
+}
+
+#clr-picker .clr-preview::after {
+	box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+#clr-picker input.clr-color {
+	grid-column: 2;
+	grid-row: 5;
+	order: 4;
+	width: 100%;
+	min-width: 0;
+	height: 2.75rem;
+	margin: 0;
+	padding: 0 var(--space-3);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	background: var(--paper);
+	color: var(--ink);
+	font-family: var(--font-mono);
+	font-size: 1rem;
+	font-weight: var(--weight-medium);
+	text-align: left;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+#clr-picker input.clr-color:focus {
+	border-color: var(--ink);
+	outline: 1px solid var(--ink);
+	outline-offset: 0;
+}
+
+#clr-picker .custom-color-picker-actions {
+	grid-column: 1 / -1;
+	grid-row: 6;
+	order: 5;
+	position: sticky;
+	bottom: 0;
+	z-index: 1;
+	display: flex;
+	gap: var(--space-2);
+	padding-top: var(--space-3);
+	border-top: 1px solid var(--rule);
+	background: var(--paper);
+}
+
+#clr-picker .clr-close,
+#custom-color-picker-cancel {
+	flex: 1;
+	min-width: 0;
+	height: 2.75rem;
+	margin: 0;
+	padding: var(--space-2) var(--space-3);
+	border: 1px solid var(--ink);
+	border-radius: var(--radius);
+	background: var(--ink);
+	color: var(--paper);
+	font-family: var(--font);
+	font-size: var(--text-s);
+	font-weight: var(--weight-medium);
+}
+
+#custom-color-picker-cancel {
+	border-color: var(--rule);
+	background: var(--paper);
+	color: var(--ink);
+}
+
+#clr-picker .clr-close:hover,
+#custom-color-picker-cancel:hover {
+	opacity: 0.86;
+}
+
+#clr-picker .clr-close:focus-visible,
+#custom-color-picker-cancel:focus-visible {
+	outline: 2px solid var(--ink);
+	outline-offset: 2px;
+}
+
+#clr-picker.clr-keyboard-nav .clr-marker:focus,
+#clr-picker.clr-keyboard-nav .clr-hue input:focus + div {
+	box-shadow: 0 0 0 2px var(--ink), 0 0 0 4px var(--paper);
+}
+
+#clr-picker .clr-format,
+#clr-picker .clr-swatches {
+	display: none;
+}
+
+#clr-picker[data-sheet="true"] {
+	inset-inline: 0 !important;
+	top: auto !important;
+	bottom: 0;
+	width: 100%;
+	max-height: calc(var(--picker-viewport-height, 100dvh) - 0.75rem);
+	padding: var(--space-4);
+	padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+	border-radius: 12px 12px 0 0;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+
+#clr-picker[data-sheet="true"] .clr-gradient {
+	height: clamp(4rem, calc(var(--picker-viewport-height, 100dvh) * 0.24), 10rem);
+}
+
+/* While typing, leave the hex field and both actions above the phone keyboard. */
+#clr-picker[data-keyboard="true"] {
+	gap: var(--space-2);
+	max-height: calc(var(--picker-viewport-height, 100dvh) - 0.5rem);
+	overflow-y: auto;
+}
+
+#clr-picker[data-keyboard="true"] .clr-gradient,
+#clr-picker[data-keyboard="true"] .clr-hue {
+	display: none;
+}
+
+#clr-picker[data-keyboard="true"] .custom-color-picker-label {
+	grid-row: 2;
+	margin: 0;
+}
+
+#clr-picker[data-keyboard="true"] .clr-preview,
+#clr-picker[data-keyboard="true"] .clr-color {
+	grid-row: 3;
+}
+
+#clr-picker[data-keyboard="true"] .custom-color-picker-actions {
+	grid-row: 4;
+}
+
+@media (max-height: 30rem) {
+	#clr-picker {
+		gap: var(--space-2);
+	}
+
+	#clr-picker .clr-gradient {
+		height: 24dvh;
+	}
+}

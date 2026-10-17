@@ -59,8 +59,8 @@ describe('nearest', () => {
 	});
 
 	it('keeps a far-off color in its own hue family', () => {
-		expect(nearest('#000080', PALETTE)).toBe('#0B5FA5');
-		expect(nearest('#00FFFF', PALETTE)).toBe('#58B8E8');
+		expect(nearest('#000080', PALETTE)).toBe('#014075');
+		expect(nearest('#00FFFF', PALETTE)).toBe('#A8DFFE');
 		expect(nearest('#FF0000', PALETTE)).toBe('#BC3A3A');
 		expect(nearest('#777777', PALETTE)).toBe('#6E6E6E');
 	});
@@ -68,14 +68,17 @@ describe('nearest', () => {
 	it.each(['#100000', '#200000', '#330000', '#320D10', '#4F151B', '#401818'])(
 		'keeps dark red %s red instead of turning it black or gray',
 		(hex) => {
-			expect(nearest(hex, PALETTE)).toBe('#8A2020');
+			expect(nearest(hex, PALETTE)).toBe('#5C0208');
 		}
 	);
 
-	it.each(['#302020', '#3A2828', '#4B3434', '#604848', '#785656'])(
+	it.each([
+		['#302020', '#5C0208'], ['#3A2828', '#5C0208'], ['#4B3434', '#5C0208'],
+		['#604848', '#8A2020'], ['#785656', '#8A2020']
+	])(
 		'keeps muted red %s red instead of treating it as neutral',
-		(hex) => {
-			expect(nearest(hex, PALETTE)).toBe('#8A2020');
+		(hex, expected) => {
+			expect(nearest(hex, PALETTE)).toBe(expected);
 		}
 	);
 
@@ -94,9 +97,9 @@ describe('nearest', () => {
 	);
 
 	it('keeps other dark and muted hues away from grayscale when suitable swatches exist', () => {
-		expect(nearest('#001000', PALETTE)).toBe('#579A27');
-		expect(nearest('#003300', PALETTE)).toBe('#579A27');
-		expect(nearest('#000033', PALETTE)).toBe('#0B5FA5');
+		expect(nearest('#001000', PALETTE)).toBe('#366B04');
+		expect(nearest('#003300', PALETTE)).toBe('#366B04');
+		expect(nearest('#000033', PALETTE)).toBe('#014075');
 		expect(nearest('#008080', ['#000000', '#777777', '#109090'])).toBe('#109090');
 	});
 
@@ -119,11 +122,11 @@ describe('nearest', () => {
 		const pastel = paletteColors(BUILT_IN_PALETTES[1].palette);
 		expect(nearest('#101010', pastel)).toBe('#3A3640');
 		expect(nearest('#303030', pastel)).toBe('#3A3640');
-		expect(nearest('#777777', pastel)).toBe('#6B6772');
+		expect(nearest('#777777', pastel)).toBe('#7B7782');
 	});
 
 	it('retains color in pale reds and muted browns', () => {
-		expect(nearest('#FFD0D0', PALETTE)).toBe('#E07A76');
+		expect(nearest('#FFD0D0', PALETTE)).toBe('#FFBBB6');
 		expect(nearest('#9F8170', PALETTE)).toBe('#A0622A');
 	});
 
@@ -136,8 +139,8 @@ describe('nearest', () => {
 	});
 
 	it('matches the underlying color independently of its opacity', () => {
-		expect(nearest('#320D1080', PALETTE)).toBe('#8A2020');
-		expect(nearest('rgba(50, 13, 16, 0.2)', PALETTE)).toBe('#8A2020');
+		expect(nearest('#320D1080', PALETTE)).toBe('#5C0208');
+		expect(nearest('rgba(50, 13, 16, 0.2)', PALETTE)).toBe('#5C0208');
 	});
 
 	it('falls back to the available colors in limited custom palettes', () => {
@@ -156,7 +159,7 @@ describe('createMatcher', () => {
 		for (const color of ['#320D10', '#7D8280', '#000033', '#FEFDFB']) {
 			expect(match(color)).toBe(nearest(color, PALETTE));
 		}
-		expect(match('#320D10')).toBe('#8A2020');
+		expect(match('#320D10')).toBe('#5C0208');
 		expect(matchCustom('#320D10')).toBe('#601010');
 		expect(match('none')).toBeNull();
 	});
@@ -210,7 +213,7 @@ describe('createMatcher', () => {
 
 	it('handles empty palettes and invalid artwork colors', () => {
 		expect(createMatcher([], ['#3A2828'])('#3A2828')).toBeNull();
-		expect(createMatcher(PALETTE, ['invalid', 'none', '#3A2828'])('#3A2828')).toBe('#8A2020');
+		expect(createMatcher(PALETTE, ['invalid', 'none', '#3A2828'])('#3A2828')).toBe('#5C0208');
 	});
 });
 

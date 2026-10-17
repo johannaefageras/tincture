@@ -1,6 +1,7 @@
 /** Palette file format, validation and the built-in fallback. No browser state. */
 
-import { paletteSets } from '../../palettes.ts';
+import { paletteSets as legacyPaletteSets } from '../../palettes.ts';
+import { paletteSets } from './palette-presets.ts';
 
 export interface PaletteGroup {
 	name: string;
@@ -89,6 +90,16 @@ export function parsePalette(source: string): Palette {
 /** Export the same format accepted by the importer and local storage. */
 export function serializePalette(palette: Palette): string {
 	return `${JSON.stringify(palette, null, 2)}\n`;
+}
+
+/** Expand saved, unmodified built-in selections while preserving custom palettes. */
+export function parseSavedPalette(source: string): Palette {
+	const palette = parsePalette(source);
+	const serialized = serializePalette(palette);
+	const legacy = legacyPaletteSets.find(({ name, families }) =>
+		serializePalette({ version: 1, name, groups: families }) === serialized
+	);
+	return BUILT_IN_PALETTES.find(({ id }) => id === legacy?.id)?.palette ?? palette;
 }
 
 /** Mapping target that removes a color from the artwork (fill/stroke "none"). */

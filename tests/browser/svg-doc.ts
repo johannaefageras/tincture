@@ -159,5 +159,46 @@ check('export keeps independent paints and strips editor highlighting', `<g fill
 	}
 });
 
+const selectionIds = (doc: RecolorDoc, keys: string[]) => doc.selectionShapes(keys).map((el) => el.id).sort();
+
+check('persistent selection follows original identities through replacement and None', `<g fill="red">${pair}</g><circle id="c" cx="50" cy="50" r="5" fill="${BLUE}"/>`, (doc) => {
+	doc.apply({ [RED]: BLUE });
+	const exported = doc.serialize();
+	equal(selectionIds(doc, [RED]), ['a', 'b']);
+	equal(doc.serialize(), exported);
+	doc.apply({ [RED]: NONE });
+	equal(selectionIds(doc, [RED]), ['a', 'b']);
+	equal(selectionIds(doc, []), []);
+});
+
+check('multiple selected fill and stroke colors frame each shape once', `<rect id="a" width="30" height="30" fill="red" stroke="blue" stroke-width="2"/><rect id="b" x="60" width="30" height="30" fill="blue"/>`, (doc) => {
+	equal(selectionIds(doc, [RED, '#0000FF']), ['a', 'b']);
+});
+
+check('separated area selection stays independent from shared gradient selection', `<defs><linearGradient id="gradient"><stop stop-color="red"/></linearGradient></defs><g fill="red">${pair}</g><rect id="c" y="45" width="20" height="10" fill="url(#gradient)"/>`, (doc) => {
+	equal(selectionIds(doc, [RED]), ['a', 'b', 'c']);
+	const [a] = areaKeys(doc);
+	doc.apply({ [RED]: BLUE, [a]: GREEN }, [RED]);
+	equal(selectionIds(doc, [RED]), ['c']);
+	equal(selectionIds(doc, [a]), ['a']);
+	equal(paint(doc, 'a'), 'rgb(87, 154, 39)');
+});
+
+check('inherited gradient stops identify their users without changing applied paints', `<defs><linearGradient id="base"><stop stop-color="red"/><stop offset="1" stop-color="blue"/></linearGradient><linearGradient id="inherited" href="#base"/><linearGradient id="own" href="#base"><stop stop-color="${GREEN}"/></linearGradient></defs><rect id="a" width="20" height="20" fill="url(#base)"/><rect id="b" x="30" width="20" height="20" fill="url(#inherited)"/><rect id="c" x="60" width="20" height="20" fill="url(#own)"/>`, (doc) => {
+	doc.apply({ [RED]: GREEN });
+	const applied = doc.serialize();
+	equal(selectionIds(doc, [RED]), ['a', 'b']);
+	equal(selectionIds(doc, [GREEN]), ['c']);
+	equal(doc.serialize(), applied);
+	equal(applied.includes('data-rc-'), false);
+});
+
+check('selection excludes unused definitions, masks and clipping shapes', `<defs><rect id="unused" width="40" height="40" fill="red"/><clipPath id="clip"><circle id="clipped" r="10" fill="red"/></clipPath><mask id="mask"><rect id="masked" width="40" height="40" fill="red"/></mask></defs><rect id="a" width="30" height="30" fill="red" opacity=".4" transform="translate(5 2) scale(1.5)"/>`, (doc) => {
+	const original = doc.serialize();
+	equal(selectionIds(doc, [RED]), ['a']);
+	equal(getComputedStyle(shape(doc, 'a')).opacity, '0.4');
+	equal(doc.serialize(), original);
+});
+
 document.querySelector('#summary')!.textContent = `${passed} passed, ${failed} failed`;
 document.title = `${failed ? 'FAIL' : 'PASS'}: SVG area regression checks`;

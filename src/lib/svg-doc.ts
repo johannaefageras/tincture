@@ -149,6 +149,7 @@ export class RecolorDoc {
 	#styleAttrs: StyleAttr[] = [];
 	#sheets: Sheet[] = [];
 	#shapesByKey = new Map<string, Element[]>();
+	#gradientShapesByKey = new Map<string, Set<Element>>();
 	#keysByShape = new WeakMap<Element, { fill?: string; stroke?: string }>();
 	#areasByKey = new Map<string, Area[]>();
 	#areaKeysByShape = new WeakMap<Element, Map<string, string>>();
@@ -168,6 +169,69 @@ export class RecolorDoc {
 		const weights = this.#measureShapes();
 		this.colors = this.#summarize(weights);
 		this.#collectAreas();
+		this.#collectGradientShapes();
+	}
+
+	/** Gradient colors affect the shapes using the gradient, including inherited stops. */
+	#collectGradientShapes() {
+		const gradients = new Map(
+			[...this.root.querySelectorAll('linearGradient[id], radialGradient[id]')].map((el) => [el.id, el])
+		);
+		if (!gradients.size) return;
+		const colorsByGradient = new Map<Element, Set<string>>();
+		const colorsFor = (gradient: Element, seen = new Set<Element>()): Set<string> => {
+			const cached = colorsByGradient.get(gradient);
+			if (cached) return cached;
+			if (seen.has(gradient)) return new Set();
+			seen.add(gradient);
+			const stops = [...gradient.children].filter((el) => el.localName === 'stop');
+			const colors = new Set<string>();
+			if (stops.length) {
+				for (const stop of stops) {
+					const color = this.#resolve(getComputedStyle(stop).stopColor, stop);
+					if (color) colors.add(color.key);
+				}
+			} else {
+				const href = gradient.getAttribute('href') ?? gradient.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+				const parent = href?.startsWith('#') ? gradients.get(href.slice(1)) : undefined;
+				if (parent) for (const key of colorsFor(parent, seen)) colors.add(key);
+			}
+			colorsByGradient.set(gradient, colors);
+			return colors;
+		};
+
+		for (const el of this.root.querySelectorAll(SHAPES)) {
+			if (el.closest(NOT_ARTWORK)) continue;
+			const style = getComputedStyle(el);
+			for (const paint of [style.fill, style.stroke]) {
+				const url = /^url\(["']?([^"')]+)["']?\)/.exec(paint)?.[1];
+				if (!url?.includes('#')) continue;
+				let id = url.slice(url.lastIndexOf('#') + 1);
+				try { id = decodeURIComponent(id); } catch { /* Use a literal SVG id if it is not URI encoded. */ }
+				const gradient = gradients.get(id);
+				if (!gradient) continue;
+				for (const key of colorsFor(gradient)) {
+					let shapes = this.#gradientShapesByKey.get(key);
+					if (!shapes) this.#gradientShapesByKey.set(key, (shapes = new Set()));
+					shapes.add(el);
+				}
+			}
+		}
+	}
+
+	/** Original paint identities stay selectable after recoloring or choosing None. */
+	selectionShapes(keys: readonly string[]): SVGGraphicsElement[] {
+		const shapes = new Set<Element>();
+		for (const key of keys) {
+			// After separation, a remaining parent row edits only shared gradient stops.
+			if (!this.#separated.has(key)) {
+				for (const el of this.#shapesByKey.get(key) ?? []) shapes.add(el);
+			}
+			for (const el of this.#gradientShapesByKey.get(key) ?? []) shapes.add(el);
+		}
+		return [...shapes].filter((el): el is SVGGraphicsElement =>
+			el instanceof SVGGraphicsElement && !el.closest('defs, symbol, clipPath, mask')
+		);
 	}
 
 	/** Without a viewBox the artwork cannot scale to fit the stage, so add one for display. */

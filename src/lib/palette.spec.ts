@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { nearest } from './color.ts';
-import { BUILT_IN_PALETTES, paletteColors, paletteRows, parsePalette, serializePalette } from './palette.ts';
+import { paletteSets as legacyPaletteSets } from '../../palettes.ts';
+import { nearest, parseColor, toOklab } from './color.ts';
+import { BUILT_IN_PALETTES, paletteColors, paletteRows, parsePalette, parseSavedPalette, serializePalette } from './palette.ts';
 
 const valid = () => ({
 	version: 1,
@@ -21,11 +22,11 @@ describe('palette files', () => {
 		expect(parsePalette(`\uFEFF${JSON.stringify(source)}`)).toEqual(valid());
 	});
 
-	it('accepts a single color and groups longer than the default three-column display', () => {
+	it('accepts a single color and groups longer than the five-column display', () => {
 		expect(parsePalette(JSON.stringify({ version: 1, name: 'One', groups: [{ name: 'Only', colors: ['#123456'] }] })).groups[0].colors).toEqual(['#123456']);
 		const source = valid();
-		source.groups[0].colors.push('#579A27', '#7CCB45', '#B4E48C');
-		expect(parsePalette(JSON.stringify(source)).groups[0].colors).toHaveLength(5);
+		source.groups[0].colors.push('#579A27', '#7CCB45', '#B4E48C', '#123456');
+		expect(parsePalette(JSON.stringify(source)).groups[0].colors).toHaveLength(6);
 	});
 
 	it.each(BUILT_IN_PALETTES)('round-trips the built-in palette $palette.name through export and import', ({ palette }) => {
@@ -36,7 +37,7 @@ describe('palette files', () => {
 		const template = readFileSync(new URL('../../static/palette-template.json', import.meta.url), 'utf8');
 		const palette = parsePalette(template);
 		expect(palette.name).toBe('Soft colors');
-		expect(paletteColors(palette)).toHaveLength(9);
+		expect(paletteColors(palette)).toHaveLength(15);
 		expect(parsePalette(serializePalette(palette))).toEqual(palette);
 	});
 
@@ -81,6 +82,42 @@ describe('palette files', () => {
 		const source = valid();
 		source.groups[1].colors.push(' #bc3a3a ');
 		expect(() => parsePalette(JSON.stringify(source))).toThrow('Group “Neutral”, color 2: #BC3A3A is already used in group “Accent”, color 1');
+	});
+});
+
+describe('expanded built-in palettes', () => {
+	it.each(BUILT_IN_PALETTES)('keeps five ordered shades and the original default in $palette.name', ({ id, palette }) => {
+		expect(paletteColors(palette)).toHaveLength(52);
+		expect(palette.groups[0].colors).toHaveLength(2);
+		const original = legacyPaletteSets.find((preset) => preset.id === id)!;
+		for (const group of palette.groups.slice(1)) {
+			expect(group.colors, group.name).toHaveLength(5);
+			expect(group.colors[2], group.name).toBe(original.families.find(({ name }) => name === group.name)!.colors[1]);
+			const lightness = group.colors.map((hex) => toOklab(parseColor(hex)!)[0]);
+			for (let shade = 1; shade < lightness.length; shade++) {
+				expect(lightness[shade], `${group.name}, shade ${shade + 1}`).toBeLessThan(lightness[shade - 1]);
+			}
+		}
+	});
+
+	it.each(legacyPaletteSets)('expands the saved original $name selection', ({ id, name, families }) => {
+		const original = serializePalette({ version: 1, name, groups: families });
+		expect(parseSavedPalette(original)).toEqual(BUILT_IN_PALETTES.find((preset) => preset.id === id)!.palette);
+		expect(parsePalette(original).groups).toEqual(families);
+	});
+
+	it('preserves saved custom palettes even when they share a built-in name', () => {
+		const custom = valid();
+		custom.name = 'Crayon Box';
+		expect(parseSavedPalette(JSON.stringify(custom))).toEqual(custom);
+		const edited = structuredClone(legacyPaletteSets[0]);
+		edited.families[1].colors[0] = '#123456';
+		const palette = { version: 1 as const, name: edited.name, groups: edited.families };
+		expect(parseSavedPalette(serializePalette(palette))).toEqual(palette);
+	});
+
+	it.each(BUILT_IN_PALETTES)('restores expanded $palette.name unchanged', ({ palette }) => {
+		expect(parseSavedPalette(serializePalette(palette))).toEqual(palette);
 	});
 });
 

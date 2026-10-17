@@ -9,33 +9,58 @@
 		PALETTE_STORAGE_KEY,
 		paletteColors,
 		parsePalette,
+		parseSavedPalette,
 		serializePalette,
 		type Palette
 	} from '#lib/palette.ts';
 	import Icon from './Icon.svelte';
+	import PaletteChooser from './PaletteChooser.svelte';
 	import PaletteGrid from './PaletteGrid.svelte';
 
 	interface Props {
 		palette: Palette;
+		compact?: boolean;
 		active: string | null;
 		suggested: string | null;
+		hasArtwork: boolean;
+		canMatch: boolean;
+		onmatch: () => void;
 		onpick: (target: string) => void;
 		onpreview: (target: string | null) => void;
 	}
 
-	let { palette = $bindable(), active, suggested, onpick, onpreview }: Props = $props();
+	let { palette = $bindable(), compact = false, active, suggested, hasArtwork, canMatch, onmatch, onpick, onpreview }: Props = $props();
 	let input: HTMLInputElement | undefined = $state();
 	let importing = $state(false);
 	let feedback = $state('');
 	let feedbackTimer: ReturnType<typeof setTimeout> | undefined;
 	let problem = $state(false);
 	let hasSaved = $state(false);
+	let tools: HTMLDetailsElement | undefined = $state();
+	let toolsSummary: HTMLElement | undefined = $state();
+	let toolsOpen = $state(false);
+
+	function closeTools() {
+		toolsOpen = false;
+		toolsSummary?.focus();
+	}
+
+	function dismissTools(event: PointerEvent) {
+		if (toolsOpen && event.target instanceof Node && !tools?.contains(event.target)) {
+			toolsOpen = false;
+		}
+	}
+
+	function onToolsKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape' && toolsOpen) {
+			event.preventDefault();
+			event.stopPropagation();
+			closeTools();
+		}
+	}
 
 	const count = $derived(paletteColors(palette).length);
 	const isDefault = $derived(serializePalette(palette) === serializePalette(DEFAULT_PALETTE));
-	const selectedPreset = $derived(
-		BUILT_IN_PALETTES.find(({ palette: preset }) => serializePalette(preset) === serializePalette(palette))
-	);
 
 	function clearFeedback() {
 		clearTimeout(feedbackTimer);
@@ -70,13 +95,14 @@
 		if (saved === null) return;
 		hasSaved = true;
 		try {
-			palette = parsePalette(saved);
+			palette = parseSavedPalette(saved);
 		} catch {
 			showFeedback('The saved palette could not be read. Using the default palette; import your file again.', true);
 		}
 	});
 
 	function replace(next: Palette, message: string, restore = false) {
+		clearFeedback();
 		onpreview(null);
 		palette = next;
 		let storageProblem = false;
@@ -88,13 +114,12 @@
 			storageProblem = true;
 			message += ' Browser storage is unavailable, so this change may not be remembered after a refresh.';
 		}
-		showFeedback(message, storageProblem);
+		if (message) showFeedback(message, storageProblem);
 	}
 
-	function choosePreset(event: Event) {
-		const id = (event.currentTarget as HTMLSelectElement).value;
+	function choosePreset(id: string) {
 		const preset = BUILT_IN_PALETTES.find((preset) => preset.id === id);
-		if (preset) replace(preset.palette, `Selected “${preset.palette.name}”.`, preset.palette === DEFAULT_PALETTE);
+		if (preset) replace(preset.palette, '', preset.palette === DEFAULT_PALETTE);
 	}
 
 	async function importFile() {
@@ -125,34 +150,58 @@
 	}
 </script>
 
-<section class="panel" aria-labelledby="palette-title">
+<svelte:window onpointerdown={dismissTools} />
+
+<section class="panel" class:compact aria-labelledby="palette-title">
 	<header>
-		<label id="palette-title" class="eyebrow" for="palette-choice">Palette</label>
-		<div class="palette-choice">
-			<select id="palette-choice" value={selectedPreset?.id ?? ''} disabled={importing} onchange={choosePreset}>
-				{#if !selectedPreset}<option value="" disabled>{palette.name} (imported)</option>{/if}
-				{#each BUILT_IN_PALETTES as preset (preset.id)}
-					<option value={preset.id}>{preset.palette.name}</option>
-				{/each}
-			</select>
-		</div>
+		<p id="palette-title" class="eyebrow">Palette</p>
+		<PaletteChooser
+			{palette}
+			disabled={importing}
+			onchange={choosePreset}
+			onopen={() => { toolsOpen = false; onpreview(null); }}
+		/>
 		<p class="summary">{count} {count === 1 ? 'color' : 'colors'} · {palette.groups.length} {palette.groups.length === 1 ? 'group' : 'groups'}</p>
-		<div class="actions">
-			<button type="button" class="button primary import" disabled={importing} onclick={() => input?.click()}>
-				<Icon name="import" />{importing ? 'Importing…' : 'Import palette'}
-			</button>
-			<button type="button" class="button" aria-label="Export palette" onclick={exportFile}>Export</button>
-			<a class="button" href={asset('palette-template.json')} download aria-label="Download palette template">Template</a>
-		</div>
-		<button type="button" class="restore" disabled={(isDefault && !hasSaved) || importing} onclick={() => replace(DEFAULT_PALETTE, 'Default palette restored.', true)}>
-			Restore default
-		</button>
+		{#if hasArtwork}
+			<div class="apply-palette">
+				<button
+					type="button"
+					class="button apply"
+					disabled={!canMatch}
+					title={canMatch ? `Match off-palette colors to ${palette.name}` : `All artwork colors are already on ${palette.name}`}
+					onclick={onmatch}
+				>
+					Match to {palette.name}
+				</button>
+				<p class="apply-hint">Choosing a palette keeps your current colors.</p>
+			</div>
+		{/if}
+		<details class="tools" bind:this={tools} bind:open={toolsOpen}>
+			<summary bind:this={toolsSummary} onkeydown={onToolsKeydown}>
+				<span>Palette tools</span>
+				<Icon name={toolsOpen ? 'caret-up' : 'caret-down'} />
+			</summary>
+			<div class="tools-panel">
+				<button type="button" disabled={importing} onkeydown={onToolsKeydown} onclick={() => { closeTools(); input?.click(); }}>
+					<Icon name="import" />{importing ? 'Importing…' : 'Import palette'}
+				</button>
+				<button type="button" onkeydown={onToolsKeydown} onclick={() => { closeTools(); exportFile(); }}>
+					<Icon name="download" />Export palette
+				</button>
+				<a href={asset('palette-template.json')} download onkeydown={onToolsKeydown} onclick={closeTools}>
+					<Icon name="document" />Download template
+				</a>
+				<button type="button" class="restore" disabled={(isDefault && !hasSaved) || importing} onkeydown={onToolsKeydown} onclick={() => { closeTools(); replace(DEFAULT_PALETTE, 'Default palette restored.', true); }}>
+					<Icon name="undo" />Restore default
+				</button>
+			</div>
+		</details>
 		{#if feedback}
 			<p class="feedback" class:problem role={problem ? 'alert' : 'status'} out:feedbackExit>{feedback}</p>
 		{/if}
 		<input bind:this={input} type="file" hidden accept=".json,application/json" onchange={importFile} />
 	</header>
-	<PaletteGrid {palette} {active} {suggested} {onpick} {onpreview} />
+	<PaletteGrid {palette} {compact} {active} {suggested} {onpick} {onpreview} />
 </section>
 
 <style>
@@ -175,84 +224,101 @@
 		font-size: var(--text-s);
 	}
 
-	.palette-choice {
-		position: relative;
-		margin-top: var(--space-1);
-	}
-
-	.palette-choice::after {
-		position: absolute;
-		top: 50%;
-		inset-inline-end: var(--space-3);
-		width: 0.375rem;
-		height: 0.375rem;
-		border-right: 1.5px solid currentColor;
-		border-bottom: 1.5px solid currentColor;
-		transform: translateY(-75%) rotate(45deg);
-		content: '';
-		pointer-events: none;
-	}
-
-	select {
-		appearance: none;
-		display: block;
-		width: 100%;
-		min-width: 0;
-		min-height: 2rem;
-		padding: 0.375rem var(--space-2);
-		padding-inline-end: 2rem;
-		border: 1px solid var(--rule);
-		border-radius: var(--radius);
-		background: var(--paper);
-		font-weight: var(--weight-semibold);
-		cursor: pointer;
-	}
-
-	select:hover:not(:disabled) {
-		border-color: var(--ink);
-	}
-
 	.summary {
 		margin-top: 6px;
 	}
 
-	.actions {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: var(--space-2);
+	.apply-palette {
 		margin-top: var(--space-3);
 	}
 
-	.actions .button {
+	.apply {
 		justify-content: center;
-		padding-inline: var(--space-2);
-		text-decoration: none;
+		width: 100%;
+		min-height: 2.75rem;
+		overflow-wrap: anywhere;
 	}
 
-	.actions a {
-		color: var(--ink);
+	.apply-hint {
+		margin-top: var(--space-2);
+		color: var(--ink-muted);
+		font-size: var(--text-s);
+		line-height: 1.4;
 	}
 
-	.import {
-		grid-column: 1 / -1;
+	.tools {
+		position: relative;
+		margin-top: var(--space-3);
 	}
 
-	.restore {
+	summary {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+		min-height: 2rem;
+		padding: 0.375rem var(--space-2);
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		font-size: var(--text-s);
+		font-weight: var(--weight-medium);
+		list-style: none;
+		cursor: pointer;
+	}
+
+	summary::-webkit-details-marker {
+		display: none;
+	}
+
+	summary:hover,
+	.tools[open] summary {
+		border-color: var(--ink);
+	}
+
+	.tools-panel {
+		position: absolute;
+		z-index: 2;
+		top: calc(100% + var(--space-1));
+		inset-inline: 0;
+		padding: var(--space-1);
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		background: var(--paper);
+		box-shadow: 0 4px 12px var(--wash-strong);
+	}
+
+	.tools-panel button,
+	.tools-panel a {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
 		width: 100%;
 		min-height: 2rem;
-		margin-top: var(--space-1);
-		padding: var(--space-1);
+		padding: var(--space-2) var(--space-1);
 		border: 0;
+		border-radius: var(--radius);
 		background: none;
+		color: var(--ink);
 		font-size: var(--text-s);
-		text-decoration: underline;
-		text-underline-offset: 3px;
+		line-height: 1.25;
+		text-align: left;
+		text-decoration: none;
 	}
 
-	.restore:disabled {
+	.tools-panel button:hover:not(:disabled),
+	.tools-panel a:hover {
+		background: var(--wash);
+	}
+
+	.tools-panel .restore {
+		margin-top: var(--space-1);
+		border-top: 1px solid var(--rule);
+		border-radius: 0;
+	}
+
+	.tools-panel button:disabled {
 		color: var(--ink-muted);
 		cursor: default;
-		text-decoration: none;
 	}
 
 	.feedback {
@@ -267,9 +333,65 @@
 		background: var(--wash);
 	}
 
+	.panel.compact {
+		height: 100%;
+		min-height: 0;
+		--palette-choice-margin: 0;
+	}
+
+	.compact header {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 8rem;
+		gap: var(--space-2);
+	}
+
+	.compact .eyebrow,
+	.compact .summary,
+	.compact .apply-hint {
+		display: none;
+	}
+
+	.compact .tools {
+		grid-column: 2;
+		grid-row: 1;
+		align-self: start;
+		margin: 0;
+	}
+
+	.compact .apply-palette,
+	.compact .feedback {
+		grid-column: 1 / -1;
+		margin: 0;
+	}
+
+	.compact .tools-panel {
+		position: fixed;
+		z-index: 6;
+		top: auto;
+		bottom: max(var(--space-3), env(safe-area-inset-bottom));
+		inset-inline: var(--space-3);
+		max-height: calc(100dvh - 1.5rem);
+		overflow-y: auto;
+	}
+
+	@media (min-width: 32rem) and (max-width: 56rem) and (max-height: 30rem) {
+		.compact .tools-panel {
+			inset-inline-start: calc(50% + var(--space-3));
+		}
+	}
+
+	@media (max-height: 24rem) {
+		.panel.compact {
+			display: block;
+			overflow-y: auto;
+			overscroll-behavior: contain;
+		}
+	}
+
 	@media (max-width: 56rem), (pointer: coarse) {
-		select,
-		.restore {
+		summary,
+		.tools-panel button,
+		.tools-panel a {
 			min-height: 2.75rem;
 		}
 	}

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { tick, type Snippet } from 'svelte';
 	import { mountSvg, unmountSvg, type RecolorDoc } from '#lib/svg-doc.ts';
 	import Icon from './Icon.svelte';
 
@@ -10,11 +10,13 @@
 		onbackdrop: (backdrop: Backdrop) => void;
 		/** A shape was clicked (its color or separated area key), or empty space (null). */
 		onpick: (key: string | null, event: MouseEvent) => void;
+		selected: string[];
+		onclear: () => void;
 		/** Shown on top of the stage: the empty state. */
 		children?: Snippet;
 	}
 
-	let { backdrop, onbackdrop, onpick, children }: Props = $props();
+	let { backdrop, onbackdrop, onpick, selected, onclear, children }: Props = $props();
 
 	const MIN_SCALE = 0.25;
 	const MAX_SCALE = 40;
@@ -28,6 +30,41 @@
 	let x = $state(0);
 	let y = $state(0);
 	let panning = $state(false);
+	interface SelectionFrame { left: number; top: number; width: number; height: number }
+	let frames = $state<SelectionFrame[]>([]);
+
+	function measureSelection(currentDoc = doc, keys = selected) {
+		if (!viewport || !currentDoc) {
+			frames = [];
+			return;
+		}
+		const origin = viewport.getBoundingClientRect();
+		frames = currentDoc.selectionShapes(keys).flatMap((shape) => {
+			const bounds = shape.getBoundingClientRect();
+			if ((!bounds.width && !bounds.height) || !Number.isFinite(bounds.left + bounds.top + bounds.width + bounds.height)) return [];
+			return [{
+				left: bounds.left - origin.left - 3,
+				top: bounds.top - origin.top - 3,
+				width: Math.max(1, bounds.width) + 6,
+				height: Math.max(1, bounds.height) + 6
+			}];
+		});
+	}
+
+	$effect(() => {
+		// Wait for the selected document, pan and zoom to reach the DOM before measuring.
+		const view = { doc, selected, x, y, scale };
+		let cancelled = false;
+		tick().then(() => { if (!cancelled) measureSelection(view.doc, view.selected); });
+		return () => { cancelled = true; };
+	});
+
+	$effect(() => {
+		if (!viewport) return;
+		const observer = new ResizeObserver(() => measureSelection());
+		observer.observe(viewport);
+		return () => observer.disconnect();
+	});
 
 	/** Show an SVG. Throws when the source is not an SVG; the previous one then stays up. */
 	export function mount(source: string): RecolorDoc {
@@ -148,9 +185,19 @@
 		<div class="canvas" style:transform={`translate(${x}px, ${y}px) scale(${scale})`}>
 			<div class="host" bind:this={host}></div>
 		</div>
+		<div class="selection-frames" aria-hidden="true">
+			{#each frames as frame, index (index)}
+				<div class="selection-frame" style:left={`${frame.left}px`} style:top={`${frame.top}px`} style:width={`${frame.width}px`} style:height={`${frame.height}px`}></div>
+			{/each}
+		</div>
 	</div>
 
 	{#if doc}
+		{#if selected.length}
+			<button type="button" class="clear-selection" aria-label="Clear selection" aria-describedby="artwork-selection-count" title="Clear selection (Esc)" onclick={onclear}>
+				<span id="artwork-selection-count">{selected.length}<span class="selection-word">{' selected'}</span></span><Icon name="reset" />
+			</button>
+		{/if}
 		<div class="controls">
 			<div class="group" role="group" aria-label="Background">
 				{#each BACKDROPS as option (option.value)}
@@ -222,13 +269,46 @@
 
 	.canvas {
 		position: absolute;
-		inset: 2.5rem 2.5rem 4rem;
+		inset: var(--stage-canvas-inset, 2.5rem 2.5rem 4rem);
 		transform-origin: center;
 	}
 
 	.host {
 		width: 100%;
 		height: 100%;
+	}
+
+	.selection-frames {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+
+	.selection-frame {
+		position: absolute;
+		border: 1px solid #fff;
+		box-shadow: 0 0 0 1px #111, inset 0 0 0 1px #111;
+		border-radius: 2px;
+	}
+
+	.clear-selection {
+		position: absolute;
+		top: var(--space-3);
+		inset-inline-end: var(--space-3);
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: 2rem;
+		padding: var(--space-1) var(--space-2);
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		background: var(--paper);
+		color: var(--ink);
+		font-size: var(--text-s);
+	}
+
+	.clear-selection:hover {
+		border-color: var(--ink);
 	}
 
 	.controls {
@@ -298,9 +378,25 @@
 		outline-offset: 1px;
 	}
 
+	@media (max-width: 56rem) {
+		.selection-word {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
+		}
+	}
+
 	@media (max-width: 56rem), (pointer: coarse) {
+		.clear-selection {
+			min-height: 2.75rem;
+		}
+
 		.canvas {
-			inset: var(--space-6) var(--space-4) 4.5rem;
+			inset: var(--stage-canvas-inset, var(--space-6) var(--space-4) 4.5rem);
 		}
 
 		.group {

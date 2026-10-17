@@ -31,5 +31,8 @@
   "description": "Swap the colors of an SVG for colors from a fixed palette.",
   "engines": {
     "node": ">=22.17"
+  },
+  "dependencies": {
+    "@melloware/coloris": "^0.25.0"
   }
 }
