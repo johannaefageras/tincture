@@ -2,6 +2,8 @@
 
 Swap the colors in an SVG for colors from a built-in or imported palette.
 
+Live at https://johannaefageras.github.io/tincture/
+
 Open an SVG and it keeps its original colors. Use the magic wand button to match
 its colors to the nearest palette swatches, or select a color and click a palette
 swatch to change every shape in that color.
