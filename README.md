@@ -24,9 +24,15 @@ Needs Node 22.17 or newer.
 
 `npm run build` writes the whole site as static files to `build/`.
 
+On GitHub, [.github/workflows/deploy.yml](.github/workflows/deploy.yml) tests,
+builds and deploys the site on every push to `main`. Before the first push, set
+**Settings → Pages → Source** to **GitHub Actions**. The workflow asks GitHub
+Pages for the site's base path, so it needs no changes for a renamed repo or a
+custom domain.
+
 GitHub Pages serves a project site from a subfolder named after the repo, such
-as `https://<user>.github.io/tincture/`. Build for that address by setting the
-subfolder as the base path:
+as `https://<user>.github.io/tincture/`. To build for that address by hand, set
+the subfolder as the base path:
 
 ```sh
 BASE_PATH=/tincture npm run build
