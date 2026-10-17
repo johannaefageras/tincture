@@ -1,0 +1,156 @@
+/*
+ * The chrome stays achromatic apart from the small brand mark, keeping the
+ * palette and artwork as the main sources of color.
+ */
+:root {
+	color-scheme: light dark;
+
+	--paper: hsl(0 0% 100%);
+	--bench: hsl(0 0% 94%);
+	--rule: hsl(0 0% 84%);
+	--ink: hsl(0 0% 8%);
+	--ink-muted: hsl(0 0% 38%);
+	--wash: hsl(0 0% 0% / 0.06);
+	--wash-strong: hsl(0 0% 0% / 0.11);
+
+	/* GT Pressura is used when it is installed on this Mac; Barlow ships with the app. */
+	--font: 'GT Pressura', 'Barlow', system-ui, sans-serif;
+	--text-s: 0.8125rem;
+	--text-m: 0.9375rem;
+	--text-l: 1.125rem;
+
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 0.75rem;
+	--space-4: 1rem;
+	--space-6: 1.5rem;
+	--radius: 3px;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--paper: hsl(0 0% 13%);
+		--bench: hsl(0 0% 9%);
+		--rule: hsl(0 0% 26%);
+		--ink: hsl(0 0% 94%);
+		--ink-muted: hsl(0 0% 64%);
+		--wash: hsl(0 0% 100% / 0.07);
+		--wash-strong: hsl(0 0% 100% / 0.13);
+	}
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	height: 100%;
+	margin: 0;
+}
+
+body {
+	background: var(--bench);
+	color: var(--ink);
+	font-family: var(--font);
+	font-size: var(--text-m);
+	line-height: 1.35;
+	font-variant-numeric: tabular-nums;
+	-webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+	font: inherit;
+	color: inherit;
+}
+
+button {
+	cursor: pointer;
+}
+
+button:disabled {
+	cursor: default;
+}
+
+:focus-visible {
+	outline: 2px solid var(--ink);
+	outline-offset: 2px;
+}
+
+h1,
+h2,
+p {
+	margin: 0;
+}
+
+/* Shared button looks, used by several components. */
+.button {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+	min-height: 2rem;
+	max-width: 100%;
+	padding: 0.375rem var(--space-3);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	background: var(--paper);
+	font-size: var(--text-s);
+	font-weight: 500;
+	line-height: 1.25;
+	text-align: center;
+}
+
+.button:hover:not(:disabled) {
+	border-color: var(--ink);
+}
+
+.button:disabled {
+	color: var(--ink-muted);
+	opacity: 0.55;
+}
+
+.button.primary {
+	border-color: var(--ink);
+	background: var(--ink);
+	color: var(--paper);
+}
+
+.button.primary:hover:not(:disabled) {
+	opacity: 0.86;
+}
+
+.button.icon-only {
+	width: 2rem;
+	flex: none;
+	padding: 0;
+	justify-content: center;
+}
+
+@media (max-width: 56rem), (pointer: coarse) {
+	.button {
+		min-height: 2.75rem;
+	}
+
+	.button.icon-only {
+		width: 2.75rem;
+	}
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		transition: none !important;
+		animation: none !important;
+	}
+}

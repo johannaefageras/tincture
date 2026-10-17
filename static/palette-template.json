@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "name": "Soft colors",
+  "groups": [
+    {
+      "name": "Pink",
+      "colors": ["#B02E6C", "#E0569A", "#F4A3C8"]
+    },
+    {
+      "name": "Green",
+      "colors": ["#579A27", "#7CCB45", "#B4E48C"]
+    },
+    {
+      "name": "Neutrals",
+      "colors": ["#FFFFFF", "#BDBDBD", "#2B2B2B"]
+    }
+  ]
+}
