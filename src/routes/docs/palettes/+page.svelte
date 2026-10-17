@@ -23,7 +23,7 @@
 
 <header class="topbar">
 	<div class="topbar-inner">
-		<a class="brand" href={resolve('/')}>Tincture</a>
+		<a class="brand display" href={resolve('/')}>Tincture</a>
 		<a class="button editor-link" href={resolve('/')}>Open editor</a>
 	</div>
 </header>

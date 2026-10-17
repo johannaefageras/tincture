@@ -3,7 +3,8 @@
 	import redoSvg from '#lib/assets/icons/redo.svg?raw';
 	import folderOpenSvg from '#lib/assets/icons/folder-open.svg?raw';
 	import copySvg from '#lib/assets/icons/copy.svg?raw';
-	import downloadSvg from '#lib/assets/icons/arrow-down-to-line.svg?raw';
+	import downloadSvg from '#lib/assets/icons/arrow-down-to-bracket.svg?raw';
+	import importSvg from '#lib/assets/icons/arrow-up-from-bracket.svg?raw';
 	import xmarkSvg from '#lib/assets/icons/xmark.svg?raw';
 	import fileTextSvg from '#lib/assets/icons/file-text.svg?raw';
 
@@ -13,6 +14,7 @@
 		open: folderOpenSvg,
 		copy: copySvg,
 		download: downloadSvg,
+		import: importSvg,
 		reset: xmarkSvg,
 		document: fileTextSvg
 	} as const;

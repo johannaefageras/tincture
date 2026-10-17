@@ -13,6 +13,66 @@
 	font-display: swap;
 }
 
+@font-face {
+	font-family: 'Spot Grotesk';
+	src: url('./lib/assets/fonts/SpotGrotesk-Light.woff2') format('woff2');
+	font-weight: 300;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Spot Grotesk';
+	src: url('./lib/assets/fonts/SpotGrotesk-LightItalic.woff2') format('woff2');
+	font-weight: 300;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Spot Grotesk';
+	src: url('./lib/assets/fonts/SpotGrotesk-Regular.woff2') format('woff2');
+	font-weight: 400;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Spot Grotesk';
+	src: url('./lib/assets/fonts/SpotGrotesk-RegularItalic.woff2') format('woff2');
+	font-weight: 400;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Spot Grotesk';
+	src: url('./lib/assets/fonts/SpotGrotesk-Medium.woff2') format('woff2');
+	font-weight: 500;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Spot Grotesk';
+	src: url('./lib/assets/fonts/SpotGrotesk-MediumItalic.woff2') format('woff2');
+	font-weight: 500;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Spot Grotesk';
+	src: url('./lib/assets/fonts/SpotGrotesk-Bold.woff2') format('woff2');
+	font-weight: 700;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Spot Grotesk';
+	src: url('./lib/assets/fonts/SpotGrotesk-BoldItalic.woff2') format('woff2');
+	font-weight: 700;
+	font-style: italic;
+	font-display: swap;
+}
+
 /*
  * The chrome stays achromatic apart from the small brand mark, keeping the
  * palette and artwork as the main sources of color.
@@ -28,13 +88,14 @@
 	--wash: hsl(0 0% 0% / 0.06);
 	--wash-strong: hsl(0 0% 0% / 0.11);
 
-	--font: 'JF Tincture', system-ui, sans-serif;
+	--font: 'Spot Grotesk', system-ui, sans-serif;
+	--font-display: 'JF Tincture', system-ui, sans-serif;
 	--font-mono: 'JF Tincture Mono', ui-monospace, monospace;
-	/* Tincture's named instances sit at these wght values, rather than at 400, 500, 600 and 700. */
-	--weight-regular: 364;
-	--weight-medium: 426;
-	--weight-semibold: 506;
-	--weight-bold: 626;
+	/* Spot Grotesk has no SemiBold, so semibold uses Bold. */
+	--weight-regular: 400;
+	--weight-medium: 500;
+	--weight-semibold: 700;
+	--weight-bold: 700;
 	--text-s: 0.8125rem;
 	--text-m: 0.9375rem;
 	--text-l: 1.125rem;
@@ -111,6 +172,20 @@ h1,
 h2,
 p {
 	margin: 0;
+}
+
+/*
+ * Headings and display text use Tincture. Its named instances sit at these wght values,
+ * rather than at 400, 500, 600 and 700, so the weight tokens are redefined here.
+ */
+h1,
+h2,
+.display {
+	--weight-regular: 364;
+	--weight-medium: 426;
+	--weight-semibold: 506;
+	--weight-bold: 626;
+	font-family: var(--font-display);
 }
 
 /* Shared button looks, used by several components. */

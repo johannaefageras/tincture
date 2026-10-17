@@ -12,6 +12,7 @@
 		serializePalette,
 		type Palette
 	} from '#lib/palette.ts';
+	import Icon from './Icon.svelte';
 	import PaletteGrid from './PaletteGrid.svelte';
 
 	interface Props {
@@ -138,7 +139,7 @@
 		<p class="summary">{count} {count === 1 ? 'color' : 'colors'} · {palette.groups.length} {palette.groups.length === 1 ? 'group' : 'groups'}</p>
 		<div class="actions">
 			<button type="button" class="button primary import" disabled={importing} onclick={() => input?.click()}>
-				{importing ? 'Importing…' : 'Import palette'}
+				<Icon name="import" />{importing ? 'Importing…' : 'Import palette'}
 			</button>
 			<button type="button" class="button" aria-label="Export palette" onclick={exportFile}>Export</button>
 			<a class="button" href={asset('palette-template.json')} download aria-label="Download palette template">Template</a>

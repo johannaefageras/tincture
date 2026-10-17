@@ -363,7 +363,7 @@
 <div class="app">
 	<header class="bar">
 		<div class="identity">
-			<a class="brand" href={resolve('/')} aria-label="Tincture home">
+			<a class="brand display" href={resolve('/')} aria-label="Tincture home">
 				<img src={brandMark} width="28" height="28" alt="" />
 				<strong>Tincture</strong>
 			</a>
@@ -441,7 +441,7 @@
 		<Stage bind:this={stage} {backdrop} onbackdrop={(next) => (backdrop = next)} onpick={pickOnCanvas}>
 			{#if !doc}
 				<div class="empty">
-					<p class="lead">Drop an SVG here to recolor it.</p>
+					<p class="lead display">Drop an SVG here to recolor it.</p>
 					<div class="choices">
 						<button type="button" class="button primary" onclick={() => fileInput?.click()}>Choose a file</button>
 						<button type="button" class="button" onclick={() => loadSvg(crotonSvg, 'croton-v2.svg')}>
@@ -453,7 +453,7 @@
 			{/if}
 		</Stage>
 
-		{#if dragging}<div class="drop" aria-hidden="true">Drop to open</div>{/if}
+		{#if dragging}<div class="drop display" aria-hidden="true">Drop to open</div>{/if}
 		<p class="notice" class:shown={notice !== ''} role="status">{notice}</p>
 	</main>
 
