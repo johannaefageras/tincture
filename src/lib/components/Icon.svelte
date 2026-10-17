@@ -7,6 +7,7 @@
 	import importSvg from '#lib/assets/icons/arrow-up-from-bracket.svg?raw';
 	import xmarkSvg from '#lib/assets/icons/xmark.svg?raw';
 	import fileTextSvg from '#lib/assets/icons/file-text.svg?raw';
+	import objectUngroupSvg from '#lib/assets/icons/object-ungroup.svg?raw';
 
 	const ASSETS = {
 		undo: undoSvg,
@@ -16,14 +17,14 @@
 		download: downloadSvg,
 		import: importSvg,
 		reset: xmarkSvg,
-		document: fileTextSvg
+		document: fileTextSvg,
+		separate: objectUngroupSvg
 	} as const;
 
 	const PATHS = {
 		check: 'M3.5 9.5l3.5 3.5 7.5-8',
 		plus: 'M9 4v10 M4 9h10',
-		minus: 'M4 9h10',
-		separate: 'M7 3H3v4 M11 3h4v4 M3 11v4h4 M15 11v4h-4 M9 2v14'
+		minus: 'M4 9h10'
 	} as const;
 
 	type Name = keyof typeof PATHS | keyof typeof ASSETS;
