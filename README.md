@@ -55,7 +55,11 @@ GitHub Pages from hiding the `_app` folder.
   The swatch tagged "nearest" is the closest match to the selected color.
 - **None** removes a color (handy for an unwanted white background).
 - **Magic wand**: the small icon button beside Reset all maps every off-palette
-  color to its closest swatch in one go. Undo or Reset all restores the originals.
+  color to a palette swatch in one go. Matching keeps dark and muted colors in
+  similar hues, while neutral colors match by tone. Related shades are matched
+  together so lighter areas do not become darker than their shadows. Colors
+  already on the palette stay fixed, and original opacity is preserved.
+  Undo or Reset all restores the originals.
 - **Undo / redo**: ⌘Z and ⇧⌘Z. The ✕ on a row puts that one color back.
 - **Find a color**: hover a row and everything else in the artwork fades.
 - **View**: scroll to pan, pinch or ⌘-scroll to zoom, double-click to fit again.

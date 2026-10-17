@@ -139,7 +139,7 @@ export function formatWithAlpha(hex: string, alpha: number): string {
 	return `rgba(${color.r},${color.g},${color.b},${Math.round(alpha * 1000) / 1000})`;
 }
 
-// --- Perceptual distance (OKLab with corrected lightness) -------------------
+// --- Perceptual palette matching ------------------------------------------
 
 type Lab = [number, number, number];
 
@@ -166,41 +166,200 @@ export function toOklab(color: RGBA): Lab {
 	const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
 	const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
 	return [
-		toe(0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s),
+		0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
 		1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
 		0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s
 	];
 }
 
-/**
- * Lightness counts half as much as hue and chroma, the same weighting color
- * difference formulas use for textiles (kL = 2). With a small palette that
- * keeps a color in its own family: navy goes to the dark blue, not to the dark
- * gray that happens to be closer in lightness.
- */
-const LIGHTNESS_WEIGHT = 0.5;
+// These are palette-recoloring weights, not a standard Delta E formula.
+const LIGHTNESS_WEIGHT = 0.65;
+const HUE_WEIGHT = 0.35;
+const LOST_HUE_PENALTY = 1.25;
 
+interface MatchColor {
+	key: string;
+	lightness: number;
+	a: number;
+	b: number;
+	chroma: number;
+	hueA: number;
+	hueB: number;
+	strength: number;
+	band: number;
+}
+
+interface Candidate {
+	hex: string;
+	color: MatchColor;
+}
+
+function smoothstep(start: number, end: number, value: number): number {
+	const amount = clamp((value - start) / (end - start), 0, 1);
+	return amount * amount * (3 - 2 * amount);
+}
+
+/** RGB hue groups stay the same when a color is tinted or shaded. */
+function hueBand({ r, g, b }: RGBA): number {
+	const max = Math.max(r, g, b);
+	const range = max - Math.min(r, g, b);
+	if (range === 0) return -1;
+	const hue =
+		max === r ? ((g - b) / range + 6) % 6 : max === g ? (b - r) / range + 2 : (r - g) / range + 4;
+	// Narrow 15-degree bands keep neighboring families from flattening each
+	// other's shadows. Red is centered on the circular 0/360 boundary.
+	return Math.round(hue * 4) % 24;
+}
+
+/**
+ * Absolute chroma shrinks toward black, even for a saturated red. A plain
+ * Lab distance therefore makes dark colors look like good matches for black.
+ * Keep hue direction separate from saturation: muted red should be able to
+ * match a stronger red without an extra hue penalty. Fade hue importance for
+ * minute neutral casts, considering both dark colors and pale tints.
+ *
+ * Oklab conversion: https://bottosson.github.io/posts/oklab/
+ * The relative saturation and extra hue weight are application heuristics.
+ */
+function matchingColor(color: RGBA): MatchColor {
+	const [l, a, b] = toOklab(color);
+	const chroma = Math.hypot(a, b);
+	const saturation = chroma / Math.max(0.1, Math.min(l, 1 - l));
+	const strength = smoothstep(0.025, 0.1, saturation) * smoothstep(0.008, 0.03, chroma);
+	return {
+		key: toHex(color),
+		lightness: toe(l),
+		a,
+		b,
+		chroma,
+		hueA: chroma > 1e-8 ? a / chroma : 0,
+		hueB: chroma > 1e-8 ? b / chroma : 0,
+		strength,
+		band: strength < 0.1 ? -1 : hueBand(color)
+	};
+}
+
+/** Squared, directional score: how well a candidate replaces this source. */
+function matchingScore(source: MatchColor, candidate: MatchColor): number {
+	if (source.key === candidate.key) return 0;
+	const l = (source.lightness - candidate.lightness) * LIGHTNESS_WEIGHT;
+	const a = source.a - candidate.a;
+	const b = source.b - candidate.b;
+	const cosine = clamp(source.hueA * candidate.hueA + source.hueB * candidate.hueB, -1, 1);
+	// A candidate can be stronger than the source without changing its hue.
+	// Only a substantial loss of chroma makes its hue direction unreliable.
+	const retainedHue = smoothstep(0.1, 0.6, candidate.chroma / Math.max(source.chroma, 1e-8));
+	const hue = 2 * retainedHue * (1 - cosine) + (LOST_HUE_PENALTY * (1 - retainedHue)) ** 2;
+	return l * l + a * a + b * b + (HUE_WEIGHT * source.strength) ** 2 * hue;
+}
+
+/** Directional palette-matching score. Alpha is preserved separately. */
 export function distance(a: string, b: string): number {
 	const first = parseColor(a);
 	const second = parseColor(b);
 	if (!first || !second) return Infinity;
-	const [l1, a1, b1] = toOklab(first);
-	const [l2, a2, b2] = toOklab(second);
-	return Math.hypot((l1 - l2) * LIGHTNESS_WEIGHT, a1 - a2, b1 - b2);
+	return Math.sqrt(matchingScore(matchingColor(first), matchingColor(second)));
 }
 
-/** The palette color that looks closest to `hex`. */
-export function nearest(hex: string, palette: string[]): string | null {
-	let best: string | null = null;
-	let bestDistance = Infinity;
-	for (const candidate of palette) {
-		const d = distance(hex, candidate);
-		if (d < bestDistance) {
-			bestDistance = d;
-			best = candidate;
+const byTone = (a: MatchColor, b: MatchColor) =>
+	a.lightness - b.lightness || a.key.localeCompare(b.key);
+
+/**
+ * Find the lowest total replacement cost for each band of related shades,
+ * requiring lighter source colors to map to equal or lighter swatches.
+ * Existing palette colors are fixed anchors. Prefix minima keep this O(n*m),
+ * where n is the number of artwork colors and m is the palette size.
+ */
+function matchArtwork(candidates: Candidate[], artwork: readonly string[]): Map<string, string> {
+	const sources = new Map<string, MatchColor>();
+	for (const token of artwork) {
+		const color = parseColor(token);
+		if (!color) continue;
+		const source = matchingColor(color);
+		sources.set(source.key, source);
+	}
+	const bands = new Map<number, MatchColor[]>();
+	for (const source of sources.values()) {
+		const band = bands.get(source.band) ?? [];
+		band.push(source);
+		bands.set(source.band, band);
+	}
+	const targets = candidates.toSorted((a, b) => byTone(a.color, b.color));
+	const width = targets.length;
+	const targetIndices = new Map(targets.map((target, index) => [target.color.key, index]));
+	const matches = new Map<string, string>();
+	for (const band of bands.values()) {
+		band.sort(byTone);
+		const previousIndices = new Uint32Array(band.length * width);
+		let costs = new Float64Array(width);
+		for (let row = 0; row < band.length; row++) {
+			const source = band[row];
+			const fixed = targetIndices.get(source.key);
+			const nextCosts = new Float64Array(width);
+			let bestCost = Infinity;
+			let bestIndex = 0;
+			for (let column = 0; column < width; column++) {
+				if (costs[column] < bestCost) {
+					bestCost = costs[column];
+					bestIndex = column;
+				}
+				nextCosts[column] =
+					fixed !== undefined && fixed !== column
+						? Infinity
+						: bestCost + matchingScore(source, targets[column].color);
+				previousIndices[row * width + column] = bestIndex;
+			}
+			costs = nextCosts;
+		}
+		let column = 0;
+		for (let index = 1; index < width; index++) {
+			if (costs[index] < costs[column]) column = index;
+		}
+		for (let row = band.length - 1; row >= 0; row--) {
+			matches.set(band[row].key, targets[column].hex);
+			column = previousIndices[row * width + column];
 		}
 	}
-	return best;
+	return matches;
+}
+
+/** Prepare shared suggestions, optionally keeping an artwork's shades ordered. */
+export function createMatcher(
+	palette: readonly string[],
+	artwork: readonly string[] = []
+): (color: string) => string | null {
+	const unique = new Map<string, Candidate>();
+	for (const hex of palette) {
+		const parsed = parseColor(hex);
+		if (!parsed) continue;
+		const color = matchingColor(parsed);
+		if (!unique.has(color.key)) unique.set(color.key, { hex, color });
+	}
+	const candidates = [...unique.values()];
+	if (!candidates.length) return () => null;
+	const matches = matchArtwork(candidates, artwork);
+	return (token) => {
+		const color = parseColor(token);
+		if (!color) return null;
+		const source = matchingColor(color);
+		const matched = matches.get(source.key);
+		if (matched) return matched;
+		let best: string | null = null;
+		let bestScore = Infinity;
+		for (const candidate of candidates) {
+			const score = matchingScore(source, candidate.color);
+			if (score < bestScore) {
+				bestScore = score;
+				best = candidate.hex;
+			}
+		}
+		return best;
+	};
+}
+
+/** The closest palette swatch, favoring hue retention for colorful artwork. */
+export function nearest(hex: string, palette: readonly string[]): string | null {
+	return createMatcher(palette)(hex);
 }
 
 /** Black or white, whichever is readable on top of `hex`. */

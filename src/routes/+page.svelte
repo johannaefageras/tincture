@@ -2,8 +2,8 @@
 	import { tick } from 'svelte';
 	import { resolve } from '$app/paths';
 	import brandMark from '#lib/assets/favicon.svg';
-	import sampleSvg from '#lib/assets/sample.svg?raw';
-	import { nearest } from '#lib/color.ts';
+	import crotonSvg from '#lib/assets/croton-v2.svg?raw';
+	import { createMatcher } from '#lib/color.ts';
 	import ColorList, { type Row } from '#lib/components/ColorList.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import PalettePanel from '#lib/components/PalettePanel.svelte';
@@ -26,6 +26,7 @@
 	let nameInput: HTMLInputElement | undefined = $state();
 	let nameButton: HTMLButtonElement | undefined = $state();
 	let colors = $state.raw<DocColor[]>([]);
+	const matchColor = $derived(createMatcher(swatches, colors.map((color) => color.hex)));
 
 	// Every change is a new mapping, so undo is just stepping back through them.
 	let history = $state.raw<Mapping[]>([{}]);
@@ -74,7 +75,7 @@
 
 	const suggestedSwatch = $derived.by(() => {
 		if (selectedRows.length !== 1 || inPalette(selectedRows[0].hex)) return null;
-		return nearest(selectedRows[0].hex, swatches);
+		return matchColor(selectedRows[0].hex);
 	});
 
 	// Keep the artwork in step with the mapping, plus the swatch being previewed.
@@ -199,7 +200,7 @@
 		const next = { ...mapping };
 		for (const row of rows) {
 			if (row.resolved) continue;
-			const match = nearest(row.hex, swatches);
+			const match = matchColor(row.hex);
 			if (match) next[row.key] = match;
 		}
 		commit(next);
@@ -443,7 +444,7 @@
 					<p class="lead">Drop an SVG here to recolor it.</p>
 					<div class="choices">
 						<button type="button" class="button primary" onclick={() => fileInput?.click()}>Choose a file</button>
-						<button type="button" class="button" onclick={() => loadSvg(sampleSvg, 'example.svg')}>
+						<button type="button" class="button" onclick={() => loadSvg(crotonSvg, 'croton-v2.svg')}>
 							Try the example
 						</button>
 					</div>
