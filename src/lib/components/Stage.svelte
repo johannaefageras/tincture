@@ -8,7 +8,7 @@
 	interface Props {
 		backdrop: Backdrop;
 		onbackdrop: (backdrop: Backdrop) => void;
-		/** A shape was clicked (its original color key), or empty space (null). */
+		/** A shape was clicked (its color or separated area key), or empty space (null). */
 		onpick: (key: string | null, event: MouseEvent) => void;
 		/** Shown on top of the stage: the empty state. */
 		children?: Snippet;

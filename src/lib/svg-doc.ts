@@ -34,7 +34,7 @@ const HOST_CSS = `
 
 /** One color found in the artwork. */
 export interface DocColor {
-	/** Identity: the original color as #RRGGBB, or #RRGGBBAA when translucent. */
+	/** Identity: the original color (#RRGGBB[AA]), with an area suffix when separated. */
 	key: string;
 	/** The original color without alpha, for display and matching. */
 	hex: string;
@@ -45,10 +45,21 @@ export interface DocColor {
 	stops: number;
 	/** Rough painted area, used to list the dominant colors first. */
 	weight: number;
+	/** Number of independently editable SVG shapes sharing this color. */
+	areas: number;
+	/** Present only for a separately editable area. */
+	parentKey?: string;
+	areaIndex?: number;
 }
 
-/** Original color key → replacement (#RRGGBB, or NONE to remove the color). */
+/** Original color or area key → replacement (#RRGGBB, or NONE to remove the color). */
 export type Mapping = Record<string, string>;
+
+interface Area {
+	color: DocColor;
+	el: SVGElement;
+	props: ('fill' | 'stroke')[];
+}
 
 interface Slot {
 	key: string;
@@ -139,6 +150,11 @@ export class RecolorDoc {
 	#sheets: Sheet[] = [];
 	#shapesByKey = new Map<string, Element[]>();
 	#keysByShape = new WeakMap<Element, { fill?: string; stroke?: string }>();
+	#areasByKey = new Map<string, Area[]>();
+	#areaKeysByShape = new WeakMap<Element, Map<string, string>>();
+	#separated = new Set<string>();
+	#overrides: { el: SVGElement; style: string | null }[] = [];
+	#overrideStyle = document.createElement('span').style;
 	#located: Element[] = [];
 	#addedViewBox = false;
 	#hadXmlDeclaration: boolean;
@@ -151,6 +167,7 @@ export class RecolorDoc {
 		this.#collectSlots();
 		const weights = this.#measureShapes();
 		this.colors = this.#summarize(weights);
+		this.#collectAreas();
 	}
 
 	/** Without a viewBox the artwork cannot scale to fit the stage, so add one for display. */
@@ -370,7 +387,8 @@ export class RecolorDoc {
 					alpha: slot.alpha,
 					shapes: this.#shapesByKey.get(slot.key)?.length ?? 0,
 					stops: 0,
-					weight: weights.get(slot.key) ?? 0
+					weight: weights.get(slot.key) ?? 0,
+					areas: this.#shapesByKey.get(slot.key)?.length ?? 0
 				};
 				byKey.set(slot.key, color);
 			}
@@ -381,8 +399,46 @@ export class RecolorDoc {
 		);
 	}
 
+	#collectAreas() {
+		for (const color of this.colors) {
+			const areas = (this.#shapesByKey.get(color.key) ?? []).map((el, index): Area => {
+				const key = `${color.key}:area-${index + 1}`;
+				const paints = this.#keysByShape.get(el)!;
+				const props = (['fill', 'stroke'] as const).filter((prop) => paints[prop] === color.key);
+				let keys = this.#areaKeysByShape.get(el);
+				if (!keys) this.#areaKeysByShape.set(el, (keys = new Map()));
+				keys.set(color.key, key);
+				this.#shapesByKey.set(key, [el]);
+				return {
+					el: el as SVGElement,
+					props,
+					color: { ...color, key, parentKey: color.key, areaIndex: index + 1, shapes: 1, stops: 0, areas: 1 }
+				};
+			});
+			this.#areasByKey.set(color.key, areas);
+		}
+	}
+
+	/** Replace separated color groups with stable, individually selectable area rows. */
+	listColors(separated: string[]): DocColor[] {
+		const keys = new Set(separated);
+		return this.colors.flatMap((color) => {
+			if (!keys.has(color.key) || color.areas < 2) return [color];
+			const areas = this.#areasByKey.get(color.key)!.map((area) => area.color);
+			// Gradient stops still belong to the shared gradient, rather than a solid shape.
+			return color.stops ? [{ ...color, shapes: 0, areas: 0 }, ...areas] : areas;
+		});
+	}
+
 	/** Rewrite the SVG so every mapped color shows its replacement. */
-	apply(mapping: Mapping) {
+	apply(mapping: Mapping, separated: string[] = []) {
+		// Restore the previous base style before rewriting attributes or shared CSS.
+		for (const { el, style } of this.#overrides.reverse()) {
+			if (style === null) el.removeAttribute('style');
+			else el.setAttribute('style', style);
+		}
+		this.#overrides = [];
+		this.#separated = new Set(separated);
 		for (const slot of this.#slots) {
 			const target = mapping[slot.key];
 			let next: string | null = null;
@@ -402,6 +458,19 @@ export class RecolorDoc {
 			if (!sheet.dirty) continue;
 			sheet.el.textContent = sheet.pieces.join('');
 			sheet.dirty = false;
+		}
+		for (const key of separated) {
+			for (const area of this.#areasByKey.get(key) ?? []) {
+				const target = mapping[area.color.key] ?? area.color.hex;
+				const shared = mapping[key] ?? area.color.hex;
+				if (target === shared) continue;
+				this.#overrides.push({ el: area.el, style: area.el.getAttribute('style') });
+				const value = target === NONE ? 'none' : formatWithAlpha(target, area.color.alpha);
+				// Inline !important also overrides a shared stylesheet's !important rule.
+				this.#overrideStyle.cssText = area.el.getAttribute('style') ?? '';
+				for (const prop of area.props) this.#overrideStyle.setProperty(prop, value, 'important');
+				area.el.setAttribute('style', this.#overrideStyle.cssText);
+			}
 		}
 	}
 
@@ -426,13 +495,18 @@ export class RecolorDoc {
 			const keys = this.#keysByShape.get(node);
 			if (keys) {
 				if (keys.fill && keys.stroke && keys.fill !== keys.stroke && this.#isOnStroke(node, clientX, clientY)) {
-					return keys.stroke;
+					return this.#selectionKey(node, keys.stroke);
 				}
-				return keys.fill ?? keys.stroke ?? null;
+				const key = keys.fill ?? keys.stroke;
+				return key ? this.#selectionKey(node, key) : null;
 			}
 			node = node.parentElement;
 		}
 		return null;
+	}
+
+	#selectionKey(el: Element, key: string): string {
+		return this.#separated.has(key) ? (this.#areaKeysByShape.get(el)?.get(key) ?? key) : key;
 	}
 
 	#isOnStroke(el: Element, clientX: number, clientY: number): boolean {

@@ -53,6 +53,12 @@ GitHub Pages from hiding the `_app` folder.
   ⌘-click adds to the selection, shift-click selects a range, ↑/↓ steps through the list.
 - **Swap**: hover a swatch to preview it on the artwork, click to apply.
   The swatch tagged "nearest" is the closest match to the selected color.
+- **Separate areas**: colors used by multiple shapes have a Separate areas button.
+  Click it to give each shape its own row, then select an area in the artwork or
+  list and choose a swatch. Existing replacements are kept. Undo reverses separation;
+  Reset all restores the original colors while keeping the areas separate.
+  Areas follow the SVG's shapes, so disconnected parts of one path stay together.
+  Gradient stops remain shared.
 - **None** removes a color (handy for an unwanted white background).
 - **Magic wand**: the small icon button beside Reset all maps every off-palette
   color to a palette swatch in one go. Matching keeps dark and muted colors in
@@ -132,7 +138,8 @@ Colors are read from `fill`, `stroke`, `stop-color`, `flood-color`,
 `style="…"`, or in a `<style>` block (the way Illustrator exports classes).
 Shapes with no fill at all, which render black, are found too. Colors inside
 `<clipPath>` and `<mask>` are left alone. A swap rewrites only those values;
-the rest of the file is untouched.
+the rest of the file is untouched. Separately recolored areas use local fill/stroke
+styles to override inherited colors or shared CSS without changing other shapes.
 
 ## Project layout
 
@@ -154,3 +161,6 @@ npm run check    # type check
 npm run build    # static production build in build/
 npm run preview  # serve the production build on http://localhost:4173
 ```
+
+Run `npm run test:browser` and open `http://127.0.0.1:5174/svg-doc.html` for the SVG
+area regression checks in a real browser (computed styles, selection and export).

@@ -10,6 +10,9 @@
 		alpha: number;
 		shapes: number;
 		stops: number;
+		areas: number;
+		parentKey?: string;
+		areaIndex?: number;
 		/** What it shows as now: #RRGGBB or NONE. */
 		current: string;
 		changed: boolean;
@@ -23,21 +26,25 @@
 		onselect: (key: string, event: MouseEvent) => void;
 		onhover: (key: string | null) => void;
 		onreset: (key: string) => void;
+		onseparate: (key: string) => void;
 		onmatchall: () => void;
 		onresetall: () => void;
 	}
 
-	let { rows, selected, onselect, onhover, onreset, onmatchall, onresetall }: Props = $props();
+	let { rows, selected, onselect, onhover, onreset, onseparate, onmatchall, onresetall }: Props = $props();
 
 	const offCount = $derived(rows.filter((row) => !row.resolved).length);
 	const changedCount = $derived(rows.filter((row) => row.changed).length);
+	const areaCount = $derived(rows.filter((row) => row.parentKey).length);
 
 	const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
 	function summary(): string {
 		if (!rows.length) return 'No colors found in this SVG.';
-		if (offCount === 0) return `${plural(rows.length, 'color')}, all on palette`;
-		return `${plural(rows.length, 'color')}, ${offCount} off palette`;
+		const colorCount = new Set(rows.map((row) => row.parentKey ?? row.key)).size;
+		const counts = `${plural(colorCount, 'color')}${areaCount ? ` · ${plural(areaCount, 'separate area')}` : ''}`;
+		if (offCount === 0) return `${counts}, all on palette`;
+		return `${counts}, ${offCount} off palette`;
 	}
 
 	function usage(row: Row): string {
@@ -75,42 +82,64 @@
 			<p class="hint">
 				{selected.length
 					? 'Hover the palette to preview, click a swatch to apply.'
-					: 'Select a color here or click it in the artwork.'}
+					: 'Select a color or area here, or click it in the artwork.'}
 			</p>
+		{/if}
+		{#if areaCount}
+			<p class="area-hint">Areas follow the SVG’s shapes. Parts of a single path stay together.</p>
 		{/if}
 	</header>
 
 	<ul bind:this={list}>
 		{#each rows as row (row.key)}
 			{@const isSelected = selected.includes(row.key)}
-			<li class:selected={isSelected}>
-				<button
-					type="button"
-					class="row"
-					data-key={row.key}
-					aria-pressed={isSelected}
-					onclick={(event) => onselect(row.key, event)}
-					onpointerenter={() => onhover(row.key)}
-					onpointerleave={() => onhover(null)}
-				>
-					<span class="chip" aria-hidden="true">
-						<span style:background={row.hex}></span>
-						<span class:removed={row.current === NONE} style:background={row.current === NONE ? null : row.current}
-						></span>
-					</span>
-					<span class="text">
-						<span class="hex">{name(row.current)}</span>
-						<span class="meta">{row.changed ? `was ${row.hex}, ` : ''}{usage(row)}</span>
-					</span>
-					{#if row.resolved}
-						<span class="state on"><Icon name="check" /><span class="visually-hidden">on palette</span></span>
-					{:else}
-						<span class="state off">off palette</span>
+			<li class:selected={isSelected} class:area={row.parentKey !== undefined}>
+				<div class="row-main">
+					<button
+						type="button"
+						class="row"
+						data-key={row.key}
+						aria-pressed={isSelected}
+						onclick={(event) => onselect(row.key, event)}
+						onpointerenter={() => onhover(row.key)}
+						onpointerleave={() => onhover(null)}
+					>
+						<span class="chip" aria-hidden="true">
+							<span style:background={row.hex}></span>
+							<span class:removed={row.current === NONE} style:background={row.current === NONE ? null : row.current}
+							></span>
+						</span>
+						<span class="text">
+							<span class="hex">{#if row.areaIndex}<span class="area-name">Area {row.areaIndex}</span>{' · '}{/if}{name(row.current)}</span>
+							<span class="meta">{row.changed ? `was ${row.hex}, ` : ''}{usage(row)}</span>
+						</span>
+						{#if row.resolved}
+							<span class="state on"><Icon name="check" /><span class="visually-hidden">on palette</span></span>
+						{:else}
+							<span class="state off">off palette</span>
+						{/if}
+					</button>
+					{#if row.changed}
+						<button
+							type="button"
+							class="undo"
+							aria-label={row.areaIndex ? `Put area ${row.areaIndex} back to ${row.hex}` : `Put ${row.hex} back`}
+							title="Put the original color back"
+							onclick={() => onreset(row.key)}
+						>
+							<Icon name="reset" />
+						</button>
 					{/if}
-				</button>
-				{#if row.changed}
-					<button type="button" class="undo" aria-label={`Put ${row.hex} back`} title="Put the original color back" onclick={() => onreset(row.key)}>
-						<Icon name="reset" />
+				</div>
+				{#if row.areas > 1 && !row.parentKey}
+					<button
+						type="button"
+						class="separate"
+						aria-label={`Separate ${row.areas} areas of ${row.hex}`}
+						title={`Recolor each of these ${row.areas} SVG shapes separately`}
+						onclick={() => onseparate(row.key)}
+					>
+						<Icon name="separate" />Separate areas
 					</button>
 				{/if}
 			</li>
@@ -166,6 +195,12 @@
 		font-size: var(--text-s);
 	}
 
+	.area-hint {
+		margin-top: var(--space-2);
+		color: var(--ink-muted);
+		font-size: var(--text-s);
+	}
+
 	ul {
 		flex: 1;
 		min-height: 0;
@@ -178,8 +213,40 @@
 	li {
 		position: relative;
 		display: flex;
-		align-items: stretch;
+		flex-direction: column;
 		border-bottom: 1px solid var(--rule);
+	}
+
+	.row-main {
+		display: flex;
+		align-items: stretch;
+	}
+
+	.separate {
+		display: inline-flex;
+		align-items: center;
+		align-self: flex-start;
+		gap: var(--space-1);
+		margin: 0 var(--space-4) var(--space-2);
+		padding: var(--space-1) var(--space-2);
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		background: var(--paper);
+		font-size: var(--text-s);
+	}
+
+	.separate:hover {
+		background: var(--wash);
+	}
+
+	.area .chip {
+		width: 2rem;
+	}
+
+	.area-name {
+		color: var(--ink-muted);
+		font-size: var(--text-s);
+		letter-spacing: normal;
 	}
 
 	li.selected {
@@ -317,7 +384,8 @@
 
 	@media (max-width: 56rem), (pointer: coarse) {
 		.row,
-		.undo {
+		.undo,
+		.separate {
 			min-height: 2.75rem;
 		}
 

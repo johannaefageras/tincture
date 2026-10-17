@@ -9,7 +9,7 @@
 	import PalettePanel from '#lib/components/PalettePanel.svelte';
 	import Stage, { type Backdrop } from '#lib/components/Stage.svelte';
 	import { DEFAULT_PALETTE, NONE, paletteColors, type Palette } from '#lib/palette.ts';
-	import type { DocColor, Mapping, RecolorDoc } from '#lib/svg-doc.ts';
+	import type { Mapping, RecolorDoc } from '#lib/svg-doc.ts';
 
 	let stage: Stage | undefined = $state();
 	let fileInput: HTMLInputElement | undefined = $state();
@@ -25,13 +25,18 @@
 	let nameDraft = $state('');
 	let nameInput: HTMLInputElement | undefined = $state();
 	let nameButton: HTMLButtonElement | undefined = $state();
-	let colors = $state.raw<DocColor[]>([]);
-	const matchColor = $derived(createMatcher(swatches, colors.map((color) => color.hex)));
 
-	// Every change is a new mapping, so undo is just stepping back through them.
-	let history = $state.raw<Mapping[]>([{}]);
+	// Color changes and area separation share the same undo history.
+	interface Edit {
+		mapping: Mapping;
+		separated: string[];
+	}
+	let history = $state.raw<Edit[]>([{ mapping: {}, separated: [] }]);
 	let cursor = $state(0);
-	const mapping = $derived(history[cursor]);
+	const mapping = $derived(history[cursor].mapping);
+	const separated = $derived(history[cursor].separated);
+	const colors = $derived(doc?.listColors(separated) ?? []);
+	const matchColor = $derived(createMatcher(swatches, colors.map((color) => color.hex)));
 
 	let selected = $state.raw<string[]>([]);
 	let anchor: string | null = null;
@@ -84,14 +89,22 @@
 		if (previewTarget && selected.length) {
 			const preview = { ...mapping };
 			for (const key of selected) preview[key] = previewTarget;
-			doc.apply(preview);
+			doc.apply(preview, separated);
 		} else {
-			doc.apply(mapping);
+			doc.apply(mapping, separated);
 		}
 	});
 
 	$effect(() => {
 		doc?.locate(located ? [located] : null);
+	});
+
+	// Undoing separation can remove the selected area rows.
+	$effect(() => {
+		const available = new Set(colors.map((color) => color.key));
+		if (selected.some((key) => !available.has(key))) {
+			selected = selected.filter((key) => available.has(key));
+		}
 	});
 
 	// --- Opening files -------------------------------------------------------
@@ -101,14 +114,13 @@
 		try {
 			const next = stage.mount(source);
 			doc = next;
-			colors = next.colors;
 		} catch (cause) {
 			say(cause instanceof Error ? cause.message : 'That file could not be opened.');
 			return false;
 		}
 		fileName = name;
 		editingName = false;
-		history = [{}];
+		history = [{ mapping: {}, separated: [] }];
 		cursor = 0;
 		selected = [];
 		anchor = null;
@@ -128,10 +140,9 @@
 	function closeFile() {
 		stage?.clear();
 		doc = null;
-		colors = [];
 		fileName = '';
 		editingName = false;
-		history = [{}];
+		history = [{ mapping: {}, separated: [] }];
 		cursor = 0;
 		selected = [];
 		anchor = null;
@@ -173,12 +184,31 @@
 
 	// --- Changing colors -----------------------------------------------------
 
-	function commit(next: Mapping) {
-		const before = JSON.stringify(Object.entries(mapping).sort());
-		const after = JSON.stringify(Object.entries(next).sort());
+	function commit(next: Mapping, nextSeparated = separated) {
+		const before = JSON.stringify([Object.entries(mapping).sort(), separated]);
+		const after = JSON.stringify([Object.entries(next).sort(), nextSeparated]);
 		if (before === after) return;
-		history = [...history.slice(0, cursor + 1), next];
+		history = [...history.slice(0, cursor + 1), { mapping: next, separated: nextSeparated }];
 		cursor = history.length - 1;
+	}
+
+	function separateAreas(key: string) {
+		if (!doc || separated.includes(key)) return;
+		const nextSeparated = [...separated, key];
+		const areas = doc.listColors(nextSeparated).filter((color) => color.parentKey === key);
+		if (areas.length < 2) return;
+		const next = { ...mapping };
+		// Carry the group's current replacement over without changing the artwork.
+		for (const area of areas) {
+			if (mapping[key] !== undefined) next[area.key] = mapping[key];
+		}
+		if (!doc.colors.find((color) => color.key === key)?.stops) delete next[key];
+		commit(next, nextSeparated);
+		selected = [areas[0].key];
+		anchor = areas[0].key;
+		previewTarget = null;
+		located = null;
+		say(`Separated into ${areas.length} areas. Click an area in the artwork or list to recolor it.`);
 	}
 
 	function pick(target: string) {
@@ -253,7 +283,7 @@
 	function serialize(): string | null {
 		if (!doc) return null;
 		// Export exactly what was applied, without a hover preview or pointing-out in it.
-		doc.apply(mapping);
+		doc.apply(mapping, separated);
 		doc.locate(null);
 		return doc.serialize();
 	}
@@ -465,6 +495,7 @@
 				onselect={select}
 				onhover={(key) => (located = key)}
 				onreset={resetOne}
+				onseparate={separateAreas}
 				onmatchall={matchAll}
 				onresetall={() => commit({})}
 			/>
