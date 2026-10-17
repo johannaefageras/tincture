@@ -484,7 +484,8 @@
 
 	<footer class="footer">
 		<a href={resolve('/docs/palettes')} target="_blank" rel="noopener">
-			Palette format guide<span class="visually-hidden"> (opens in a new tab)</span>
+			<span>Palette format guide<span class="visually-hidden"> (opens in a new tab)</span></span>
+			<Icon name="document" />
 		</a>
 	</footer>
 </div>
@@ -540,7 +541,7 @@
 		height: 2rem;
 		color: var(--ink);
 		font-size: 1.875rem;
-		font-weight: 400;
+		font-weight: var(--weight-regular);
 		line-height: 1;
 		letter-spacing: -0.04em;
 		text-decoration: none;
@@ -553,14 +554,14 @@
 	}
 
 	.brand strong {
-		font-weight: 700;
+		font-weight: var(--weight-bold);
 	}
 
 	h1 {
 		width: 100%;
 		min-width: 0;
 		font-size: 0.875rem;
-		font-weight: 500;
+		font-weight: var(--weight-medium);
 		white-space: nowrap;
 	}
 
@@ -569,7 +570,7 @@
 		align-items: center;
 		height: 1.5rem;
 		color: var(--ink-muted);
-		font-weight: 400;
+		font-weight: var(--weight-regular);
 	}
 
 	.filename-button,
@@ -654,23 +655,27 @@
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
-		padding: var(--space-1) var(--space-4);
+		padding: var(--space-2) var(--space-4);
 		border-top: 1px solid var(--rule);
-		background: var(--paper);
-		font-size: 0.75rem;
+		background: var(--bench);
+		font-size: var(--text-s);
 	}
 
 	.footer a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
 		padding-block: var(--space-1);
-		color: var(--ink-muted);
-		text-decoration: none;
+		color: var(--ink);
+		font-weight: var(--weight-medium);
+		text-decoration: underline;
+		text-decoration-color: var(--rule);
 		text-underline-offset: 3px;
 	}
 
 	.footer a:hover,
 	.footer a:focus-visible {
-		color: var(--ink);
-		text-decoration: underline;
+		text-decoration-color: currentColor;
 	}
 
 	.placeholder {
@@ -694,7 +699,7 @@
 
 	.lead {
 		font-size: 1.75rem;
-		font-weight: 600;
+		font-weight: var(--weight-semibold);
 		line-height: 1.15;
 		letter-spacing: -0.01em;
 	}
@@ -720,7 +725,7 @@
 		border: 2px dashed var(--ink);
 		background: color-mix(in srgb, var(--bench) 90%, transparent);
 		font-size: var(--text-l);
-		font-weight: 600;
+		font-weight: var(--weight-semibold);
 		pointer-events: none;
 	}
 
@@ -734,7 +739,7 @@
 		background: var(--ink);
 		color: var(--paper);
 		font-size: var(--text-s);
-		font-weight: 500;
+		font-weight: var(--weight-medium);
 		opacity: 0;
 		pointer-events: none;
 		transition: opacity 120ms;
@@ -795,8 +800,6 @@
 		}
 
 		.footer a {
-			display: inline-flex;
-			align-items: center;
 			min-height: 2.75rem;
 		}
 	}

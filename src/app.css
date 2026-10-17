@@ -1,3 +1,18 @@
+@font-face {
+	font-family: 'JF Tincture';
+	src: url('./lib/assets/fonts/JFTincture-VF.woff2') format('woff2');
+	font-weight: 300 900;
+	font-stretch: 100% 150%;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'JF Tincture Mono';
+	src: url('./lib/assets/fonts/JFTinctureMono-VF.woff2') format('woff2');
+	font-weight: 300 900;
+	font-display: swap;
+}
+
 /*
  * The chrome stays achromatic apart from the small brand mark, keeping the
  * palette and artwork as the main sources of color.
@@ -13,8 +28,13 @@
 	--wash: hsl(0 0% 0% / 0.06);
 	--wash-strong: hsl(0 0% 0% / 0.11);
 
-	/* GT Pressura is used when it is installed on this Mac; Barlow ships with the app. */
-	--font: 'GT Pressura', 'Barlow', system-ui, sans-serif;
+	--font: 'JF Tincture', system-ui, sans-serif;
+	--font-mono: 'JF Tincture Mono', ui-monospace, monospace;
+	/* Tincture's named instances sit at these wght values, rather than at 400, 500, 600 and 700. */
+	--weight-regular: 364;
+	--weight-medium: 426;
+	--weight-semibold: 506;
+	--weight-bold: 626;
 	--text-s: 0.8125rem;
 	--text-m: 0.9375rem;
 	--text-l: 1.125rem;
@@ -56,6 +76,7 @@ body {
 	color: var(--ink);
 	font-family: var(--font);
 	font-size: var(--text-m);
+	font-weight: var(--weight-regular);
 	line-height: 1.35;
 	font-variant-numeric: tabular-nums;
 	-webkit-font-smoothing: antialiased;
@@ -65,6 +86,11 @@ button,
 input {
 	font: inherit;
 	color: inherit;
+}
+
+code,
+pre {
+	font-family: var(--font-mono);
 }
 
 button {
@@ -98,7 +124,7 @@ p {
 	border-radius: var(--radius);
 	background: var(--paper);
 	font-size: var(--text-s);
-	font-weight: 500;
+	font-weight: var(--weight-medium);
 	line-height: 1.25;
 	text-align: center;
 }

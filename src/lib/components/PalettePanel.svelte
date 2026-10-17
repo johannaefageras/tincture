@@ -161,7 +161,7 @@
 	h2 {
 		margin-top: 2px;
 		font-size: var(--text-m);
-		font-weight: 600;
+		font-weight: var(--weight-semibold);
 		overflow-wrap: anywhere;
 	}
 

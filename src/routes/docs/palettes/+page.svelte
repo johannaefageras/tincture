@@ -147,7 +147,7 @@
 
 	.brand {
 		font-size: var(--text-l);
-		font-weight: 600;
+		font-weight: var(--weight-semibold);
 		text-decoration: none;
 	}
 
@@ -181,12 +181,12 @@
 	.eyebrow {
 		color: var(--ink-muted);
 		font-size: var(--text-s);
-		font-weight: 500;
+		font-weight: var(--weight-medium);
 	}
 
 	h1 {
 		font-size: clamp(2rem, 5vw, 2.75rem);
-		font-weight: 600;
+		font-weight: var(--weight-semibold);
 		line-height: 1.15;
 		letter-spacing: -0.02em;
 	}
@@ -213,7 +213,7 @@
 	h2 {
 		margin-bottom: var(--space-3);
 		font-size: 1.5rem;
-		font-weight: 600;
+		font-weight: var(--weight-semibold);
 		line-height: 1.3;
 		scroll-margin-top: var(--space-6);
 	}
@@ -229,7 +229,7 @@
 	}
 
 	strong {
-		font-weight: 600;
+		font-weight: var(--weight-semibold);
 	}
 
 	code {
@@ -295,7 +295,7 @@
 	}
 
 	th {
-		font-weight: 500;
+		font-weight: var(--weight-medium);
 	}
 
 	thead {

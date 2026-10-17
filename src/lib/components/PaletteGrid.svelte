@@ -109,7 +109,7 @@
 	}
 
 	.hex {
-		font-weight: 600;
+		font-weight: var(--weight-semibold);
 		letter-spacing: 0.02em;
 		opacity: 0;
 	}
@@ -121,7 +121,7 @@
 	}
 
 	.tag {
-		font-weight: 500;
+		font-weight: var(--weight-medium);
 	}
 
 	.tile.active,
@@ -151,7 +151,7 @@
 	.none-label {
 		padding: 0 0.25rem;
 		background: var(--paper);
-		font-weight: 600;
+		font-weight: var(--weight-semibold);
 	}
 
 	.blank {

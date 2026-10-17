@@ -262,7 +262,7 @@
 		border-radius: 2px;
 		background: none;
 		font-size: var(--text-s);
-		font-weight: 500;
+		font-weight: var(--weight-medium);
 	}
 
 	.group button:hover {

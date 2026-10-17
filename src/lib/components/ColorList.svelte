@@ -152,7 +152,7 @@
 
 	h2 {
 		font-size: var(--text-m);
-		font-weight: 600;
+		font-weight: var(--weight-semibold);
 	}
 
 	.summary {
@@ -239,7 +239,7 @@
 	}
 
 	.hex {
-		font-weight: 500;
+		font-weight: var(--weight-medium);
 		letter-spacing: 0.02em;
 	}
 
@@ -262,7 +262,7 @@
 	}
 
 	.state.off {
-		font-weight: 500;
+		font-weight: var(--weight-medium);
 	}
 
 	.undo {
