@@ -570,7 +570,7 @@
 		<Stage bind:this={stage} {backdrop} {selected} onclear={() => { selected = []; located = null; previewTarget = null; }} onbackdrop={(next) => (backdrop = next)} onpick={pickOnCanvas}>
 			{#if !doc}
 				<div class="empty">
-					<p class="lead display">Drop an SVG here to recolor it.</p>
+					<p class="lead display">Drop an SVG here to <em>recolor</em> it.</p>
 					<div class="choices">
 						<button type="button" class="button primary" onclick={() => fileInput?.click()}>
 							<Icon name="open" />Open SVG
@@ -733,12 +733,11 @@
 		flex: none;
 		align-items: center;
 		gap: var(--space-2);
-		height: 2rem;
+		height: 2.5rem;
 		color: var(--ink);
-		font-size: 1.875rem;
+		font-size: 2.5rem;
 		font-weight: var(--weight-regular);
 		line-height: 1;
-		letter-spacing: -0.04em;
 		text-decoration: none;
 		white-space: nowrap;
 	}
@@ -749,7 +748,7 @@
 	}
 
 	.brand strong {
-		font-weight: var(--weight-bold);
+		font-weight: var(--weight-black);
 	}
 
 	h1 {
@@ -912,7 +911,7 @@
 
 	.getting-started h2 {
 		font-size: var(--text-l);
-		font-weight: var(--weight-semibold);
+		font-weight: var(--weight-medium);
 	}
 
 	.getting-started ol {
@@ -959,10 +958,10 @@
 	}
 
 	.lead {
-		font-size: 1.75rem;
+		font-size: clamp(2.5rem, 4vw, 3rem);
 		font-weight: var(--weight-semibold);
-		line-height: 1.15;
-		letter-spacing: -0.01em;
+		line-height: 1.05;
+		text-wrap: balance;
 	}
 
 	.choices {
@@ -990,7 +989,7 @@
 		place-items: center;
 		border: 2px dashed var(--ink);
 		background: color-mix(in srgb, var(--bench) 90%, transparent);
-		font-size: var(--text-l);
+		font-size: clamp(2.5rem, 4vw, 3rem);
 		font-weight: var(--weight-semibold);
 		pointer-events: none;
 	}

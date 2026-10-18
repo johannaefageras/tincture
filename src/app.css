@@ -1,75 +1,193 @@
 @font-face {
-	font-family: 'JF Tincture';
-	src: url('./lib/assets/fonts/JFTincture-VF.woff2') format('woff2');
-	font-weight: 300 900;
-	font-stretch: 100% 150%;
-	font-display: swap;
-}
-
-@font-face {
-	font-family: 'JF Tincture Mono';
-	src: url('./lib/assets/fonts/JFTinctureMono-VF.woff2') format('woff2');
-	font-weight: 300 900;
-	font-display: swap;
-}
-
-@font-face {
-	font-family: 'Spot Grotesk';
-	src: url('./lib/assets/fonts/SpotGrotesk-Light.woff2') format('woff2');
-	font-weight: 300;
-	font-display: swap;
-}
-
-@font-face {
-	font-family: 'Spot Grotesk';
-	src: url('./lib/assets/fonts/SpotGrotesk-LightItalic.woff2') format('woff2');
-	font-weight: 300;
-	font-style: italic;
-	font-display: swap;
-}
-
-@font-face {
-	font-family: 'Spot Grotesk';
-	src: url('./lib/assets/fonts/SpotGrotesk-Regular.woff2') format('woff2');
+	font-family: 'Domaine Display';
+	src: url('./lib/assets/fonts/DomaineDisplay-Regular.woff2') format('woff2');
 	font-weight: 400;
 	font-display: swap;
 }
 
 @font-face {
-	font-family: 'Spot Grotesk';
-	src: url('./lib/assets/fonts/SpotGrotesk-RegularItalic.woff2') format('woff2');
+	font-family: 'Domaine Display';
+	src: url('./lib/assets/fonts/DomaineDisplay-RegularItalic.woff2') format('woff2');
 	font-weight: 400;
 	font-style: italic;
 	font-display: swap;
 }
 
 @font-face {
-	font-family: 'Spot Grotesk';
-	src: url('./lib/assets/fonts/SpotGrotesk-Medium.woff2') format('woff2');
+	font-family: 'Domaine Display';
+	src: url('./lib/assets/fonts/DomaineDisplay-Medium.woff2') format('woff2');
 	font-weight: 500;
 	font-display: swap;
 }
 
 @font-face {
-	font-family: 'Spot Grotesk';
-	src: url('./lib/assets/fonts/SpotGrotesk-MediumItalic.woff2') format('woff2');
+	font-family: 'Domaine Display';
+	src: url('./lib/assets/fonts/DomaineDisplay-MediumItalic.woff2') format('woff2');
 	font-weight: 500;
 	font-style: italic;
 	font-display: swap;
 }
 
 @font-face {
-	font-family: 'Spot Grotesk';
-	src: url('./lib/assets/fonts/SpotGrotesk-Bold.woff2') format('woff2');
+	font-family: 'Domaine Display';
+	src: url('./lib/assets/fonts/DomaineDisplay-SemiBold.woff2') format('woff2');
+	font-weight: 600;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Domaine Display';
+	src: url('./lib/assets/fonts/DomaineDisplay-SemiBoldItalic.woff2') format('woff2');
+	font-weight: 600;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Domaine Display';
+	src: url('./lib/assets/fonts/DomaineDisplay-Bold.woff2') format('woff2');
 	font-weight: 700;
 	font-display: swap;
 }
 
 @font-face {
-	font-family: 'Spot Grotesk';
-	src: url('./lib/assets/fonts/SpotGrotesk-BoldItalic.woff2') format('woff2');
+	font-family: 'Domaine Display';
+	src: url('./lib/assets/fonts/DomaineDisplay-BoldItalic.woff2') format('woff2');
 	font-weight: 700;
 	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Domaine Display';
+	src: url('./lib/assets/fonts/DomaineDisplay-ExtraBold.woff2') format('woff2');
+	font-weight: 800;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Domaine Display';
+	src: url('./lib/assets/fonts/DomaineDisplay-ExtBdIta.woff2') format('woff2');
+	font-weight: 800;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Domaine Display';
+	src: url('./lib/assets/fonts/DomaineDisplay-Black.woff2') format('woff2');
+	font-weight: 900;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Domaine Display';
+	src: url('./lib/assets/fonts/DomaineDisplay-BlackItalic.woff2') format('woff2');
+	font-weight: 900;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'GT Standard M';
+	src: url('./lib/assets/fonts/GTStandardM-Light.woff2') format('woff2');
+	font-weight: 300;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'GT Standard M';
+	src: url('./lib/assets/fonts/GTStandardM-LightItalic.woff2') format('woff2');
+	font-weight: 300;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'GT Standard M';
+	src: url('./lib/assets/fonts/GTStandardM-Regular.woff2') format('woff2');
+	font-weight: 400;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'GT Standard M';
+	src: url('./lib/assets/fonts/GTStandardM-RegularItalic.woff2') format('woff2');
+	font-weight: 400;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'GT Standard M';
+	src: url('./lib/assets/fonts/GTStandardM-Medium.woff2') format('woff2');
+	font-weight: 500;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'GT Standard M';
+	src: url('./lib/assets/fonts/GTStandardM-MediumItalic.woff2') format('woff2');
+	font-weight: 500;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'GT Standard M';
+	src: url('./lib/assets/fonts/GTStandardM-SemiBold.woff2') format('woff2');
+	font-weight: 600;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'GT Standard M';
+	src: url('./lib/assets/fonts/GTStandardM-SemiBoldItalic.woff2') format('woff2');
+	font-weight: 600;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'GT Standard M';
+	src: url('./lib/assets/fonts/GTStandardM-Bold.woff2') format('woff2');
+	font-weight: 700;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'GT Standard M';
+	src: url('./lib/assets/fonts/GTStandardM-BoldItalic.woff2') format('woff2');
+	font-weight: 700;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'GT Standard Mono';
+	src: url('./lib/assets/fonts/GTStandardMono-Regular.woff2') format('woff2');
+	font-weight: 400;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'GT Standard Mono';
+	src: url('./lib/assets/fonts/GTStandardMono-Medium.woff2') format('woff2');
+	font-weight: 500;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'GT Standard Mono';
+	src: url('./lib/assets/fonts/GTStandardMono-SemiBold.woff2') format('woff2');
+	font-weight: 600;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'GT Standard Mono';
+	src: url('./lib/assets/fonts/GTStandardMono-Bold.woff2') format('woff2');
+	font-weight: 700;
 	font-display: swap;
 }
 
@@ -88,14 +206,14 @@
 	--wash: hsl(0 0% 0% / 0.06);
 	--wash-strong: hsl(0 0% 0% / 0.11);
 
-	--font: 'Spot Grotesk', system-ui, sans-serif;
-	--font-display: 'JF Tincture', system-ui, sans-serif;
-	--font-mono: 'JF Tincture Mono', ui-monospace, monospace;
-	/* Spot Grotesk has no SemiBold, so semibold uses Bold. */
+	--font: 'GT Standard M', system-ui, sans-serif;
+	--font-display: 'Domaine Display', Georgia, serif;
+	--font-mono: 'GT Standard Mono', ui-monospace, monospace;
 	--weight-regular: 400;
 	--weight-medium: 500;
-	--weight-semibold: 700;
+	--weight-semibold: 600;
 	--weight-bold: 700;
+	--weight-black: 900;
 	--text-s: 0.8125rem;
 	--text-m: 0.9375rem;
 	--text-l: 1.125rem;
@@ -175,16 +293,11 @@ p {
 }
 
 /*
- * Headings and display text use Tincture. Its named instances sit at these wght values,
- * rather than at 400, 500, 600 and 700, so the weight tokens are redefined here.
+ * Display text uses Domaine Display, which is drawn for large sizes: keep it at 40px
+ * or more, in SemiBold, with the wordmark in Black. Smaller headings use the sans in
+ * Medium.
  */
-h1,
-h2,
 .display {
-	--weight-regular: 364;
-	--weight-medium: 426;
-	--weight-semibold: 506;
-	--weight-bold: 626;
 	font-family: var(--font-display);
 }
 

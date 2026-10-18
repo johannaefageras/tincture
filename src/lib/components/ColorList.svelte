@@ -203,7 +203,7 @@
 
 	h2 {
 		font-size: var(--text-m);
-		font-weight: var(--weight-semibold);
+		font-weight: var(--weight-medium);
 	}
 
 	.summary {

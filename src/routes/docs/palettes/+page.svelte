@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { asset, resolve } from '$app/paths';
+	import brandMark from '#lib/assets/favicon.svg';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -26,7 +27,10 @@
 
 <header class="topbar">
 	<div class="topbar-inner">
-		<a class="brand display" href={resolve('/')}>Tincture</a>
+		<a class="brand display" href={resolve('/')} aria-label="Tincture home">
+			<img src={brandMark} width="28" height="28" alt="" />
+			<strong>Tincture</strong>
+		</a>
 		<a class="button editor-link" href={resolve('/')}>Open editor</a>
 	</div>
 </header>
@@ -34,7 +38,7 @@
 <main id="guide">
 	<header class="intro">
 		<p class="eyebrow">Palette guide</p>
-		<h1>Import your own palette.</h1>
+		<h1 class="display">Import your own <em>palette</em>.</h1>
 		<p class="lead">Give your palette a name, arrange its colors into groups, and save it as a JSON file. Importing it replaces the swatches in Tincture.</p>
 		<a class="button primary" href={asset('palette-template.json')} download>Download JSON template</a>
 	</header>
@@ -150,9 +154,24 @@
 	}
 
 	.brand {
-		font-size: var(--text-l);
-		font-weight: var(--weight-semibold);
+		display: inline-flex;
+		flex: none;
+		align-items: center;
+		gap: var(--space-2);
+		height: 2.5rem;
+		font-size: 2.5rem;
+		line-height: 1;
 		text-decoration: none;
+		white-space: nowrap;
+	}
+
+	.brand img {
+		flex: none;
+		border-radius: 2px;
+	}
+
+	.brand strong {
+		font-weight: var(--weight-black);
 	}
 
 	a {
@@ -189,10 +208,10 @@
 	}
 
 	h1 {
-		font-size: clamp(2rem, 5vw, 2.75rem);
+		font-size: clamp(2.75rem, 8vw, 4.5rem);
 		font-weight: var(--weight-semibold);
-		line-height: 1.15;
-		letter-spacing: -0.02em;
+		line-height: 1.05;
+		text-wrap: balance;
 	}
 
 	.lead {
@@ -217,7 +236,7 @@
 	h2 {
 		margin-bottom: var(--space-3);
 		font-size: 1.5rem;
-		font-weight: var(--weight-semibold);
+		font-weight: var(--weight-medium);
 		line-height: 1.3;
 		scroll-margin-top: var(--space-6);
 	}
