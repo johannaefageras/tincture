@@ -293,9 +293,10 @@ p {
 }
 
 /*
- * Display text uses Domaine Display, which is drawn for large sizes: keep it at 40px
- * or more, in SemiBold, with the wordmark in Black. Smaller headings use the sans in
- * Medium.
+ * Display text uses Domaine Display, which is drawn for large sizes: headlines at 56px
+ * or more in Regular with -0.02em tracking, so its contrast shows. The wordmark is
+ * Bold at 32px, lighter than the headline it sits above. Smaller headings use the
+ * sans in Medium.
  */
 .display {
 	font-family: var(--font-display);

@@ -735,9 +735,10 @@
 		gap: var(--space-2);
 		height: 2.5rem;
 		color: var(--ink);
-		font-size: 2.5rem;
+		font-size: 2rem;
 		font-weight: var(--weight-regular);
 		line-height: 1;
+		letter-spacing: -0.01em;
 		text-decoration: none;
 		white-space: nowrap;
 	}
@@ -748,7 +749,7 @@
 	}
 
 	.brand strong {
-		font-weight: var(--weight-black);
+		font-weight: var(--weight-bold);
 	}
 
 	h1 {
@@ -958,9 +959,11 @@
 	}
 
 	.lead {
-		font-size: clamp(2.5rem, 4vw, 3rem);
-		font-weight: var(--weight-semibold);
-		line-height: 1.05;
+		max-width: 14ch;
+		font-size: clamp(3.5rem, 6vw, 5.5rem);
+		font-weight: var(--weight-regular);
+		line-height: 0.98;
+		letter-spacing: -0.02em;
 		text-wrap: balance;
 	}
 
